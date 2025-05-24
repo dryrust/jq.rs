@@ -24,8 +24,24 @@ publish = true
 
 [features]
 default = ["all", "std"]
-all = []
-std = []
+all = ["jaq"]
+std = ["jaq-core?/std", "jaq-std?/std", "serde_json/std", "thiserror/std"]
 unstable = []
 
+jaq = ["dep:jaq-core", "dep:jaq-json", "dep:jaq-std"]
+jq = []
+libjq = []
+xq = []
+
+[dev-dependencies]
+serde = { version = "1", default-features = false, features = ["derive"] }
+
 [dependencies]
+jaq-core = { version = "2.2", default-features = false, optional = true }
+jaq-json = { version = "1.1", default-features = false, features = [
+    "parse",
+    "serde_json",
+], optional = true }
+jaq-std = { version = "2.1", default-features = false, optional = true }
+serde_json = { version = "1", default-features = false, features = ["alloc"] }
+thiserror = { version = "2", default-features = false }
