@@ -1,0 +1,31 @@
+# See: https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[package]
+name = "jq"
+version = "0.0.0"
+authors = ["Arto Bendiken"]
+edition = "2024"
+#rust-version = "1.85"
+description = "jq.rs"
+#documentation = "https://docs.rs/jq"
+readme = true
+homepage = "https://github.com/dryrust/jq.rs"
+repository = "https://github.com/dryrust/jq.rs"
+license = "Unlicense"
+keywords = ["jq", "json", "filter"]
+categories = [
+    "command-line-utilities",
+    "template-engine",
+    "encoding",
+    "compilers",
+    "parser-implementations",
+]
+publish = true
+
+[features]
+default = ["all", "std"]
+all = []
+std = []
+unstable = []
+
+[dependencies]
