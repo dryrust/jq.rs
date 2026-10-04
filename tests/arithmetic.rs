@@ -89,3 +89,42 @@ fn multiplication_uses_exact_input_and_binding_values() -> Result<(), JsonFilter
     );
     Ok(())
 }
+
+#[test]
+fn minimum_integer_absolute_value_and_length_are_positive() -> Result<(), JsonFilterError> {
+    let min = isize::MIN;
+    let expected = json!(min.unsigned_abs());
+    for source in ["abs", "length"] {
+        let filter: JsonFilter = source.parse()?;
+        assert_eq!(filter.filter_json(json!(min))?, expected);
+        assert_eq!(
+            filter.filter_json_all(json!(min))?,
+            core::slice::from_ref(&expected)
+        );
+        assert_number(
+            &format!("{min} | {source}"),
+            &min.unsigned_abs().to_string(),
+        )?;
+    }
+    Ok(())
+}
+
+#[test]
+fn length_retains_non_integer_behavior() -> Result<(), JsonFilterError> {
+    let filter: JsonFilter = "length".parse()?;
+    for (input, expected) in [
+        (json!(null), json!(0)),
+        (json!("é🦀"), json!(2)),
+        (json!([1, 2, 3]), json!(3)),
+        (json!({"a": 1}), json!(1)),
+        (json!(-2.5), json!(2.5)),
+    ] {
+        assert_eq!(filter.filter_json(input)?, expected);
+    }
+    assert!(matches!(
+        filter.filter_json(json!(true)),
+        Err(JsonFilterError::Execute(_))
+    ));
+    assert_number("-18446744073709551615 | length", "18446744073709551615")?;
+    Ok(())
+}

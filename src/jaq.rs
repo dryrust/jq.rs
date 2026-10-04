@@ -99,6 +99,9 @@ impl Program {
             )
             .map(|(name, args, implementation)| {
                 let implementation = match name {
+                    "length" => Native::<Data>::new(|cv| {
+                        jaq_core::box_iter::box_once(length(cv.1).map_err(Into::into))
+                    }),
                     "input" => Native::<Data>::new(|cv| {
                         let value =
                             cv.0.data()
@@ -189,6 +192,27 @@ impl Program {
 
 fn execution_error(error: jaq_json::Error) -> JsonFilterError {
     JsonFilterError::Execute(error.to_string())
+}
+
+// jaq-json 2.0.3 uses isize::abs for numeric length, which overflows at MIN.
+fn length(value: Val) -> jaq_json::ValR {
+    Ok(match value {
+        Val::Null => Val::from(0usize),
+        Val::Bool(_) => return Err(jaq_json::Error::str("boolean has no length")),
+        Val::Num(Num::Int(value)) => Val::Num(Num::from_integral(value.unsigned_abs())),
+        Val::Num(Num::Float(value)) => Val::from(value.abs()),
+        Val::Num(Num::Dec(value)) => return length(Val::Num(Num::from_dec_str(&value))),
+        value @ Val::Num(Num::BigInt(_)) => {
+            if value < Val::from(0isize) {
+                return -value;
+            }
+            value
+        }
+        Val::BStr(value) => Val::from(value.len()),
+        Val::TStr(value) => Val::from(String::from_utf8_lossy(&value).chars().count()),
+        Val::Arr(value) => Val::from(value.len()),
+        Val::Obj(value) => Val::from(value.len()),
+    })
 }
 
 fn from_json(value: Value) -> Val {
