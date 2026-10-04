@@ -96,9 +96,24 @@ fn rejects_invalid_json_and_multiple_inputs() -> Result<(), JsonFilterError> {
     let filter: JsonFilter = ".".parse()?;
     for input in ["", "{invalid}", "1 2"] {
         assert!(matches!(
+            filter.filter_json_str(input),
+            Err(JsonFilterError::Parse(_))
+        ));
+        assert!(matches!(
             filter.filter_json_str_all(input),
             Err(JsonFilterError::Parse(_))
         ));
+    }
+    Ok(())
+}
+
+#[test]
+fn single_result_methods_report_immediate_execution_errors() -> Result<(), JsonFilterError> {
+    let filter: JsonFilter = r#"error("failure")"#.parse()?;
+    for result in [filter.filter_json(json!(null)), filter.filter_json_str("null")] {
+        let error = result.unwrap_err();
+        assert!(matches!(error, JsonFilterError::Execute(_)));
+        assert!(error.to_string().contains("failure"));
     }
     Ok(())
 }
