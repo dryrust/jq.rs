@@ -129,8 +129,7 @@ requires no caller code changes wherever possible.
   the current single-JSON-value string methods' contract intact.
 
 - [ ] Remove unused dependency work in backend-free builds.
-  `Cargo.toml:36-37` enables serde's derive machinery although the tests use
-  only serde_json. Remove that unused dev-dependency. Gate backend-only
+  Gate backend-only
   dependencies on their owning features; attach shared JSON/error dependencies
   to the common public API rather than specifically to `jaq`. Preserve weak
   std feature forwarding for optional dependencies and verify the
