@@ -1,8 +1,12 @@
 // This is free and unencumbered software released into the public domain.
 
 use crate::JsonFilterError;
-use alloc::{format, string::ToString, vec::Vec};
-use core::{ops::ControlFlow, str::FromStr};
+use alloc::{
+    format,
+    string::{String, ToString},
+    vec::Vec,
+};
+use core::ops::ControlFlow;
 use jaq_core::{
     Ctx, Filter, Native, RcIter,
     load::{Arena, File, Loader},
@@ -15,10 +19,11 @@ pub(crate) struct Program {
     filter: Filter<Native<Val>>,
 }
 
-impl FromStr for Program {
-    type Err = JsonFilterError;
-
-    fn from_str(input: &str) -> Result<Self, Self::Err> {
+impl Program {
+    pub(crate) fn compile(
+        input: &str,
+        bindings: &[(String, Value)],
+    ) -> Result<Self, JsonFilterError> {
         let program = File {
             code: input,
             path: (),
@@ -52,7 +57,12 @@ impl FromStr for Program {
             )
         })?;
 
+        let names: Vec<_> = bindings
+            .iter()
+            .map(|(name, _)| format!("${name}"))
+            .collect();
         let filter = jaq_core::Compiler::default()
+            .with_global_vars(names.iter().map(String::as_str))
             .with_funs(funs)
             .compile(modules)
             .map_err(|errors| {
@@ -72,10 +82,15 @@ impl Program {
     pub(crate) fn visit<B>(
         &self,
         input: Value,
+        bindings: &[(String, Value)],
         mut visitor: impl FnMut(Value) -> ControlFlow<B>,
     ) -> Result<ControlFlow<B>, JsonFilterError> {
         let inputs = RcIter::new(core::iter::empty());
-        for output in self.filter.run((Ctx::new([], &inputs), Val::from(input))) {
+        let values = bindings.iter().map(|(_, value)| Val::from(value.clone()));
+        for output in self
+            .filter
+            .run((Ctx::new(values, &inputs), Val::from(input)))
+        {
             let value = to_json(&output.map_err(execution_error)?)?;
             if let ControlFlow::Break(value) = visitor(value) {
                 return Ok(ControlFlow::Break(value));

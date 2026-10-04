@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 ### Added
+- `JsonFilter::with_bindings` for named JSON variables on both backends
 - Upstream `jq` subprocess backend, enabled with `--no-default-features --features jq`
 - `JsonFilter::filter_json_visit` for incremental output and early stopping
 

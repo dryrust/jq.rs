@@ -47,11 +47,9 @@ requires no caller code changes wherever possible.
 ## P3: Focused extensions and maintenance
 
 - [ ] Support externally supplied variable bindings.
-  `src/jaq.rs:55-57,86,122` compiles without external variable names and
-  executes with `Ctx::new([])`. Add a focused constructor/builder for named
-  JSON bindings so callers can reuse a compiled program with different data
-  without interpolating that data into filter source. Validate binding
-  names/counts and test missing bindings and repeated execution.
+  Add rebinding to reuse a compiled program with different variable values.
+  Validate the complete name set, preserve declaration order, and test missing
+  and extra names, repeated execution, and independent clones on both backends.
 
 - [ ] Accept an explicit auxiliary input stream.
   `src/jaq.rs:85,120` always supplies an empty `RcIter`, so `input` and

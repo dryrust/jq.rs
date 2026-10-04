@@ -2,7 +2,7 @@
 
 use crate::JsonFilterError;
 use alloc::{format, string::String, vec};
-use core::{ops::ControlFlow, str::FromStr};
+use core::ops::ControlFlow;
 use serde_json::Value;
 use std::{
     io::{BufRead, BufReader, Read, Write},
@@ -20,10 +20,22 @@ impl Default for Program {
     }
 }
 
-impl FromStr for Program {
-    type Err = JsonFilterError;
-
-    fn from_str(source: &str) -> Result<Self, Self::Err> {
+impl Program {
+    pub(crate) fn compile(
+        source: &str,
+        bindings: &[(String, Value)],
+    ) -> Result<Self, JsonFilterError> {
+        // Names are validated by the common API. Values travel as JSON on stdin,
+        // avoiding source interpolation and command-line argument size limits.
+        let source = if bindings.is_empty() {
+            String::from(source)
+        } else {
+            let mut prefix = String::new();
+            for (index, (name, _)) in bindings.iter().enumerate() {
+                prefix.push_str(&format!(".bindings[{index}] as ${name} | "));
+            }
+            format!("{prefix}.input | (\n{source}\n)")
+        };
         // Compile without evaluating the user expression. Newlines also keep a
         // trailing source comment from swallowing the closing parenthesis.
         let output = Command::new("jq")
@@ -39,9 +51,7 @@ impl FromStr for Program {
                 String::from_utf8_lossy(&output.stderr).trim()
             )]));
         }
-        Ok(Self {
-            source: source.into(),
-        })
+        Ok(Self { source })
     }
 }
 
@@ -49,8 +59,17 @@ impl Program {
     pub(crate) fn visit<B>(
         &self,
         input: Value,
+        bindings: &[(String, Value)],
         mut visitor: impl FnMut(Value) -> ControlFlow<B>,
     ) -> Result<ControlFlow<B>, JsonFilterError> {
+        let input = if bindings.is_empty() {
+            input
+        } else {
+            serde_json::json!({
+                "input": input,
+                "bindings": bindings.iter().map(|(_, value)| value).collect::<alloc::vec::Vec<_>>()
+            })
+        };
         let child = Command::new("jq")
             .args(["-c", "-M", "--unbuffered", "--"])
             .arg(&self.source)

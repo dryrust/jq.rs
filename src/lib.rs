@@ -20,6 +20,8 @@
 //! To use upstream jq, disable defaults and enable only `jq`; a `jq` executable
 //! must be available on `PATH` during construction and evaluation. Each call
 //! starts a fresh process, which is reaped on completion or early stopping.
+//! Unlike jaq, the subprocess backend validates source at construction and
+//! recompiles it within each evaluation process.
 //!
 //! ```
 //! # #[cfg(any(feature = "jaq", feature = "jq"))] {
@@ -45,10 +47,10 @@
 //! # Backend compatibility
 //!
 //! The default backend is jaq, whose language behavior can differ from upstream
-//! jq. External module loading and externally supplied variable bindings are
-//! unsupported. Auxiliary input is empty: `inputs` produces no values and
-//! `input` encounters exhaustion. Backend selection is intended to remain an
-//! implementation detail of the public filtering API.
+//! jq. External module loading is unsupported. Named JSON variables can be
+//! supplied with `JsonFilter::with_bindings`. Auxiliary input is empty:
+//! `inputs` produces no values and `input` encounters exhaustion. Backend
+//! selection is intended to remain an implementation detail of the public API.
 //!
 //! # Numbers
 //!

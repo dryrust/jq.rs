@@ -5,7 +5,7 @@ use crate::JsonFilterError;
 use crate::jaq::Program;
 #[cfg(all(feature = "jq", not(feature = "jaq")))]
 use crate::jq::Program;
-use alloc::vec::Vec;
+use alloc::{collections::BTreeSet, format, string::String, vec::Vec};
 use core::{ops::ControlFlow, str::FromStr};
 use serde_json::Value;
 
@@ -17,17 +17,50 @@ use serde_json::Value;
 #[derive(Clone, Default)]
 pub struct JsonFilter {
     program: Program,
+    bindings: Vec<(String, Value)>,
 }
 
 impl FromStr for JsonFilter {
     type Err = JsonFilterError;
 
     fn from_str(input: &str) -> Result<Self, Self::Err> {
-        input.parse().map(|program| Self { program })
+        Self::with_bindings(input, core::iter::empty::<(&str, Value)>())
     }
 }
 
 impl JsonFilter {
+    /// Compiles a program with named JSON values available as `$name` variables.
+    ///
+    /// Names omit `$` and must match `[A-Za-z_][A-Za-z0-9_]*`. Duplicate names
+    /// and the reserved names `ARGS`, `ENV`, and `__loc__` return a binding error.
+    /// Values are owned by the filter and reused for each call, without
+    /// interpolation into the program source. References to undeclared user
+    /// variables are program compilation errors.
+    ///
+    /// ```
+    /// use jq::JsonFilter;
+    /// use serde_json::json;
+    ///
+    /// let filter = JsonFilter::with_bindings(
+    ///     ".[] | select(.score >= $minimum)", [("minimum", json!(10))],
+    /// )?;
+    /// assert_eq!(filter.filter_json_all(json!([{"score": 5}, {"score": 12}]))?,
+    ///            [json!({"score": 12})]);
+    /// # Ok::<(), jq::JsonFilterError>(())
+    /// ```
+    pub fn with_bindings<N: AsRef<str>>(
+        source: &str,
+        bindings: impl IntoIterator<Item = (N, Value)>,
+    ) -> Result<Self, JsonFilterError> {
+        let bindings: Vec<_> = bindings
+            .into_iter()
+            .map(|(name, value)| (String::from(name.as_ref()), value))
+            .collect();
+        validate_bindings(&bindings)?;
+        let program = Program::compile(source, &bindings)?;
+        Ok(Self { program, bindings })
+    }
+
     /// Parses one JSON value and returns only its first filter result.
     ///
     /// Use [`Self::filter_json_str_all`] to retain all results and detect errors
@@ -109,6 +142,28 @@ impl JsonFilter {
         input: Value,
         visitor: impl FnMut(Value) -> ControlFlow<B>,
     ) -> Result<ControlFlow<B>, JsonFilterError> {
-        self.program.visit(input, visitor)
+        self.program.visit(input, &self.bindings, visitor)
     }
+}
+
+fn validate_bindings(bindings: &[(String, Value)]) -> Result<(), JsonFilterError> {
+    let mut seen = BTreeSet::new();
+    for (name, _) in bindings {
+        let mut bytes = name.bytes();
+        let valid = bytes
+            .next()
+            .is_some_and(|b| b.is_ascii_alphabetic() || b == b'_')
+            && bytes.all(|b| b.is_ascii_alphanumeric() || b == b'_');
+        if !valid || matches!(name.as_str(), "ARGS" | "ENV" | "__loc__") {
+            return Err(JsonFilterError::Bindings(format!(
+                "invalid variable name: {name:?}"
+            )));
+        }
+        if !seen.insert(name) {
+            return Err(JsonFilterError::Bindings(format!(
+                "duplicate variable name: {name}"
+            )));
+        }
+    }
+    Ok(())
 }

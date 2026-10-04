@@ -5,6 +5,10 @@ use alloc::{string::String, vec::Vec};
 /// A failure to parse JSON, compile a filter, or evaluate it.
 #[derive(Debug, thiserror::Error)]
 pub enum JsonFilterError {
+    /// Variable names or values do not match the filter's binding contract.
+    #[error("binding error: {0}")]
+    Bindings(String),
+
     /// The input string is not exactly one valid JSON value.
     #[error("parse error: {0}")]
     Parse(#[from] serde_json::Error),
