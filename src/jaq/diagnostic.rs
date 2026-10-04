@@ -21,6 +21,21 @@ pub(super) fn load_errors(errors: load::Errors<&str, ()>) -> Vec<CompilationDiag
                     }
                 })
                 .collect(),
+            load::Error::Parse(errors) => errors
+                .into_iter()
+                .map(|(expected, found)| CompilationDiagnostic {
+                    phase: CompilationPhase::Parse,
+                    message: format!(
+                        "expected {}",
+                        match expected {
+                            load::parse::Expect::Term => "expression",
+                            load::parse::Expect::Nothing => "end of input",
+                            _ => expected.as_str(),
+                        }
+                    ),
+                    span: Some(load::span(file.code, found)),
+                })
+                .collect(),
             error => vec![CompilationDiagnostic {
                 phase: CompilationPhase::Load,
                 message: format!("{error:?}"),

@@ -55,3 +55,22 @@ fn diagnostic_display_is_readable_and_owned() {
         "compilation error: parsing: expected expression at bytes 4..4; compilation: unknown function"
     );
 }
+
+#[cfg(feature = "jaq")]
+#[test]
+fn parser_diagnostics_locate_missing_and_unexpected_tokens() {
+    for (source, span, message) in [
+        ("1 +", 3..3, "expected expression"),
+        ("if 0", 4..4, "expected then"),
+        ("[1,]", 3..4, "expected expression"),
+        ("0;", 1..2, "expected end of input"),
+        ("\"é\"\n| 1 +", 10..10, "expected expression"),
+    ] {
+        let diagnostics = diagnostics(source);
+        assert_eq!(diagnostics.len(), 1, "{source}: {diagnostics:?}");
+        let diagnostic = &diagnostics[0];
+        assert_eq!(diagnostic.phase, CompilationPhase::Parse);
+        assert_eq!(diagnostic.span, Some(span));
+        assert_eq!(diagnostic.message, message);
+    }
+}
