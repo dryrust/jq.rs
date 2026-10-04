@@ -53,6 +53,10 @@ impl Program {
         let modules = loader
             .load(&arena, program)
             .map_err(|errors| JsonFilterError::Compile(diagnostic::load_errors(errors)))?;
+        // Data imports introduce runtime variables too; accepting them without
+        // loading their values would leave the execution context incomplete.
+        jaq_core::load::import(&modules, |_| Err("data imports are not supported".into()))
+            .map_err(|errors| JsonFilterError::Compile(diagnostic::load_errors(errors)))?;
 
         let names: Vec<_> = bindings
             .iter()

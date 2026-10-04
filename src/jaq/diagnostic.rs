@@ -1,7 +1,7 @@
 // This is free and unencumbered software released into the public domain.
 
 use crate::{CompilationDiagnostic, CompilationPhase};
-use alloc::{format, vec, vec::Vec};
+use alloc::{format, vec::Vec};
 use jaq_core::{compile, load};
 
 pub(super) fn load_errors(errors: load::Errors<&str, ()>) -> Vec<CompilationDiagnostic> {
@@ -20,7 +20,7 @@ pub(super) fn load_errors(errors: load::Errors<&str, ()>) -> Vec<CompilationDiag
                         span: Some(load::span(file.code, &found[..length])),
                     }
                 })
-                .collect(),
+                .collect::<Vec<_>>(),
             load::Error::Parse(errors) => errors
                 .into_iter()
                 .map(|(expected, found)| CompilationDiagnostic {
@@ -36,11 +36,14 @@ pub(super) fn load_errors(errors: load::Errors<&str, ()>) -> Vec<CompilationDiag
                     span: Some(load::span(file.code, found)),
                 })
                 .collect(),
-            error => vec![CompilationDiagnostic {
-                phase: CompilationPhase::Load,
-                message: format!("{error:?}"),
-                span: None,
-            }],
+            load::Error::Io(errors) => errors
+                .into_iter()
+                .map(|(path, message)| CompilationDiagnostic {
+                    phase: CompilationPhase::Load,
+                    message: format!("{path}: {message}"),
+                    span: source_span(file.code, path),
+                })
+                .collect(),
         })
         .collect()
 }

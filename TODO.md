@@ -36,8 +36,8 @@ requires no caller code changes wherever possible.
 ## P2: Build, API, and regression guarantees
 
 - [ ] Replace raw compilation debug dumps with useful diagnostics.
-  Translate module-loading errors and upstream jq diagnostics without source
-  dumps; test stable diagnostic information rather than debug formatting.
+  Normalize upstream jq compilation stderr without source excerpts; distinguish
+  compiler launch failures from program errors and test both paths.
 
 - [ ] Add bare-metal backend coverage to CI.
   After fixing the transitive std dependency, add the bare-metal backend check

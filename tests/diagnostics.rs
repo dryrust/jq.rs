@@ -117,3 +117,31 @@ fn symbol_errors_remain_available_after_source_is_dropped() {
             .any(|d| d.message == "undefined function missing/0")
     );
 }
+
+#[cfg(feature = "jaq")]
+#[test]
+fn module_and_data_imports_report_loading_diagnostics() {
+    for (source, reason) in [
+        (
+            r#"include "missing"; . # private source"#,
+            "module loading not supported",
+        ),
+        (
+            r#"import "missing" as m; m::value"#,
+            "module loading not supported",
+        ),
+        (
+            r#"import "missing" as $data; $data"#,
+            "data imports are not supported",
+        ),
+    ] {
+        let diagnostics = diagnostics(source);
+        assert_eq!(diagnostics.len(), 1);
+        let diagnostic = &diagnostics[0];
+        let start = source.find("missing").unwrap();
+        assert_eq!(diagnostic.phase, CompilationPhase::Load);
+        assert_eq!(diagnostic.span, Some(start..start + "missing".len()));
+        assert_eq!(diagnostic.message, format!("missing: {reason}"));
+        assert!(!diagnostic.to_string().contains("private source"));
+    }
+}

@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `JsonFilter::filter_json_visit` for incremental output and early stopping
 
 ### Fixed
+- Reject unsupported data imports during compilation
 - Return execution errors for `halt` and `halt_error` instead of exiting
 - Report unrepresentable output numbers instead of panicking
 
