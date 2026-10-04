@@ -1,6 +1,6 @@
 // This is free and unencumbered software released into the public domain.
 
-use crate::JsonFilterError;
+use crate::{CompilationDiagnostic, CompilationPhase, JsonFilterError};
 use alloc::{format, string::String, vec};
 use core::ops::ControlFlow;
 use serde_json::Value;
@@ -43,13 +43,23 @@ impl Program {
             .arg(format!("empty | (\n{source}\n)"))
             .stdin(Stdio::null())
             .output()
-            .map_err(|error| JsonFilterError::Compile(vec![format!("cannot run jq: {error}")]))?;
+            .map_err(|error| {
+                JsonFilterError::Compile(vec![CompilationDiagnostic {
+                    phase: CompilationPhase::Load,
+                    message: format!("cannot run jq: {error}"),
+                    span: None,
+                }])
+            })?;
         if !output.status.success() {
-            return Err(JsonFilterError::Compile(vec![format!(
-                "jq {}: {}",
-                output.status,
-                String::from_utf8_lossy(&output.stderr).trim()
-            )]));
+            return Err(JsonFilterError::Compile(vec![CompilationDiagnostic {
+                phase: CompilationPhase::Compile,
+                span: None,
+                message: format!(
+                    "jq {}: {}",
+                    output.status,
+                    String::from_utf8_lossy(&output.stderr).trim()
+                ),
+            }]));
         }
         Ok(Self { source })
     }

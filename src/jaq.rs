@@ -1,6 +1,6 @@
 // This is free and unencumbered software released into the public domain.
 
-use crate::JsonFilterError;
+use crate::{CompilationDiagnostic, CompilationPhase, JsonFilterError};
 use alloc::{
     format,
     string::{String, ToString},
@@ -52,7 +52,11 @@ impl Program {
             JsonFilterError::Compile(
                 errors
                     .into_iter()
-                    .map(|error| format!("{error:?}"))
+                    .map(|error| CompilationDiagnostic {
+                        phase: CompilationPhase::Load,
+                        message: format!("{error:?}"),
+                        span: None,
+                    })
                     .collect::<Vec<_>>(),
             )
         })?;
@@ -69,7 +73,11 @@ impl Program {
                 JsonFilterError::Compile(
                     errors
                         .into_iter()
-                        .map(|error| format!("{error:?}"))
+                        .map(|error| CompilationDiagnostic {
+                            phase: CompilationPhase::Compile,
+                            message: format!("{error:?}"),
+                            span: None,
+                        })
                         .collect::<Vec<_>>(),
                 )
             })?;

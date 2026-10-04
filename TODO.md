@@ -29,15 +29,17 @@ requires no caller code changes wherever possible.
   target builds with no features. Require the functional backend to pass
   this bare-metal check, rather than checking only the empty API surface.
 
+  Upgrade note: jaq-json 1.1.3 still enables transitive defaults. Current
+  upstream jaq-json 2.x changes the value and backend APIs, so portability and
+  arithmetic fixes need a coordinated dependency migration.
+
 ## P2: Build, API, and regression guarantees
 
 - [ ] Replace raw compilation debug dumps with useful diagnostics.
-  `src/jaq.rs:46-65` turns loader/compiler errors into debug strings containing
-  the entire source, then `JsonFilterError::Compile` debug-formats that vector
-  again. Introduce owned diagnostics with phase, message, and source span,
-  plus readable display formatting. Cover lexical errors (`[`), incomplete
-  expressions (`1 +`), unknown functions, and unbound variables; test stable
-  diagnostic information rather than upstream debug formatting.
+  Translate backend errors into the owned diagnostic types without source
+  debug dumps and populate phases and source spans. Cover lexical errors (`[`),
+  incomplete expressions (`1 +`), unknown functions, and unbound variables;
+  test stable diagnostic information rather than upstream debug formatting.
 
 - [ ] Add bare-metal backend coverage to CI.
   After fixing the transitive std dependency, add the bare-metal backend check

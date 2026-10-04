@@ -77,7 +77,11 @@ fn invalid_programs_report_compilation_diagnostics() {
         match program.parse::<JsonFilter>() {
             Err(JsonFilterError::Compile(diagnostics)) => {
                 assert!(!diagnostics.is_empty(), "{program}");
-                assert!(diagnostics.iter().all(|message| !message.is_empty()));
+                assert!(
+                    diagnostics
+                        .iter()
+                        .all(|diagnostic| !diagnostic.message.is_empty())
+                );
             }
             _ => panic!("expected compilation diagnostics for {program}"),
         }

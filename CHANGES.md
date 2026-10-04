@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Report unrepresentable output numbers instead of panicking
 
 ### Changed
+- Expose owned compilation diagnostics with phases and optional source spans
 - Require Rust 1.97 or later
 - Store execution error messages independently of backend error types
 

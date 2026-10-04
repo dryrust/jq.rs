@@ -86,6 +86,11 @@ extern crate alloc;
 extern crate std;
 
 #[cfg(any(feature = "jaq", feature = "jq"))]
+mod diagnostic;
+#[cfg(any(feature = "jaq", feature = "jq"))]
+pub use diagnostic::{CompilationDiagnostic, CompilationPhase};
+
+#[cfg(any(feature = "jaq", feature = "jq"))]
 mod error;
 #[cfg(any(feature = "jaq", feature = "jq"))]
 pub use error::JsonFilterError;

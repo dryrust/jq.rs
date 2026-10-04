@@ -1,5 +1,6 @@
 // This is free and unencumbered software released into the public domain.
 
+use crate::{CompilationDiagnostic, diagnostic::DisplayDiagnostics};
 use alloc::{string::String, vec::Vec};
 
 /// A failure to parse JSON, compile a filter, or evaluate it.
@@ -18,8 +19,8 @@ pub enum JsonFilterError {
     Output(#[source] serde_json::Error),
 
     /// The filter program could not be loaded or compiled.
-    #[error("compilation error: {0:?}")]
-    Compile(Vec<String>),
+    #[error("compilation error: {}", DisplayDiagnostics(.0))]
+    Compile(Vec<CompilationDiagnostic>),
 
     /// A single-result method evaluated a filter that produced no values.
     #[error("no output")]
