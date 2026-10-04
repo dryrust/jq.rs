@@ -12,6 +12,38 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
+  upstream-jq:
+    name: Upstream jq (${{ matrix.rust }})
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        rust: ["1.97.0", stable]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Install upstream jq
+        run: sudo apt-get update && sudo apt-get install -y jq
+      - name: Report jq version
+        run: jq --version
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ matrix.rust }}
+          components: clippy
+      - name: Run tests and doctests
+        run: cargo test --locked --no-default-features --features jq
+      - name: Run consumer contracts
+        run: >-
+          cargo test --locked -p jq-consumer-tests --no-default-features
+          --features jq
+      - name: Check subprocess adapter
+        run: >-
+          cargo clippy --locked --all-targets --no-default-features
+          --features jq -- -D warnings
+      - name: Check subprocess documentation
+        run: cargo doc --locked --no-default-features --features jq --no-deps
+        env:
+          RUSTDOCFLAGS: -D warnings
   check-32-bit:
     name: Check 32-bit jaq backend
     runs-on: ubuntu-latest

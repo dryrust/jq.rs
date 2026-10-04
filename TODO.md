@@ -31,10 +31,6 @@ requires no caller code changes wherever possible.
 
 ## P2: Build, API, and regression guarantees
 
-- [ ] Add upstream jq to CI.
-  Install jq and run jq-only library and consumer tests, including doctests.
-  Check the subprocess adapter with Clippy; all-features selects jaq instead.
-
 - [ ] Replace raw compilation debug dumps with useful diagnostics.
   `src/jaq.rs:46-65` turns loader/compiler errors into debug strings containing
   the entire source, then `JsonFilterError::Compile` debug-formats that vector
