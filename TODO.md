@@ -36,10 +36,8 @@ requires no caller code changes wherever possible.
 ## P2: Build, API, and regression guarantees
 
 - [ ] Replace raw compilation debug dumps with useful diagnostics.
-  Translate backend errors into the owned diagnostic types without source
-  debug dumps and populate phases and source spans. Cover unknown functions,
-  module errors, and unbound variables;
-  test stable diagnostic information rather than upstream debug formatting.
+  Translate module-loading errors and upstream jq diagnostics without source
+  dumps; test stable diagnostic information rather than debug formatting.
 
 - [ ] Add bare-metal backend coverage to CI.
   After fixing the transitive std dependency, add the bare-metal backend check

@@ -2,7 +2,7 @@
 
 use crate::{CompilationDiagnostic, CompilationPhase};
 use alloc::{format, vec, vec::Vec};
-use jaq_core::load;
+use jaq_core::{compile, load};
 
 pub(super) fn load_errors(errors: load::Errors<&str, ()>) -> Vec<CompilationDiagnostic> {
     errors
@@ -43,4 +43,32 @@ pub(super) fn load_errors(errors: load::Errors<&str, ()>) -> Vec<CompilationDiag
             }],
         })
         .collect()
+}
+
+pub(super) fn compile_errors(errors: compile::Errors<&str, ()>) -> Vec<CompilationDiagnostic> {
+    errors
+        .into_iter()
+        .flat_map(|(file, errors)| {
+            errors
+                .into_iter()
+                .map(move |(name, kind)| CompilationDiagnostic {
+                    phase: CompilationPhase::Compile,
+                    message: match kind {
+                        compile::Undefined::Filter(arity) => {
+                            format!("undefined function {name}/{arity}")
+                        }
+                        _ => format!("undefined {} {name}", kind.as_str()),
+                    },
+                    span: source_span(file.code, name),
+                })
+        })
+        .collect()
+}
+
+fn source_span(source: &str, fragment: &str) -> Option<core::ops::Range<usize>> {
+    // Prelude symbols can originate outside the user source. Avoid upstream's
+    // unchecked pointer subtraction and report no location for those symbols.
+    let start = (fragment.as_ptr() as usize).checked_sub(source.as_ptr() as usize)?;
+    let end = start.checked_add(fragment.len())?;
+    (end <= source.len()).then_some(start..end)
 }

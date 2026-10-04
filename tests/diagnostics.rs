@@ -74,3 +74,46 @@ fn parser_diagnostics_locate_missing_and_unexpected_tokens() {
         assert_eq!(diagnostic.message, message);
     }
 }
+
+#[cfg(feature = "jaq")]
+#[test]
+fn symbol_diagnostics_identify_the_offending_reference() {
+    for (source, symbol, message) in [
+        ("unknown(1; 2)", "unknown", "undefined function unknown/2"),
+        ("$unbound", "$unbound", "undefined variable $unbound"),
+        ("break $label", "$label", "undefined label $label"),
+        (
+            "# unknown\n\"é\" | unknown",
+            "unknown",
+            "undefined function unknown/0",
+        ),
+    ] {
+        let diagnostics = diagnostics(source);
+        assert_eq!(diagnostics.len(), 1);
+        let diagnostic = &diagnostics[0];
+        let offset = source.rfind(symbol).unwrap();
+        assert_eq!(diagnostic.phase, CompilationPhase::Compile);
+        assert_eq!(diagnostic.span, Some(offset..offset + symbol.len()));
+        assert_eq!(diagnostic.message, message);
+    }
+}
+
+#[cfg(feature = "jaq")]
+#[test]
+fn symbol_errors_remain_available_after_source_is_dropped() {
+    let diagnostics = {
+        let source = String::from("[$a, missing]");
+        diagnostics(&source)
+    };
+    assert_eq!(diagnostics.len(), 2);
+    assert!(
+        diagnostics
+            .iter()
+            .any(|d| d.message == "undefined variable $a")
+    );
+    assert!(
+        diagnostics
+            .iter()
+            .any(|d| d.message == "undefined function missing/0")
+    );
+}
