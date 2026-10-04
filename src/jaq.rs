@@ -2,7 +2,7 @@
 
 use crate::JsonFilterError;
 use alloc::{format, string::ToString, vec::Vec};
-use core::str::FromStr;
+use core::{ops::ControlFlow, str::FromStr};
 use jaq_core::{
     Ctx, Filter, Native, RcIter,
     load::{Arena, File, Loader},
@@ -69,22 +69,19 @@ impl FromStr for Program {
 }
 
 impl Program {
-    pub(crate) fn first(&self, input: Value) -> Result<Value, JsonFilterError> {
+    pub(crate) fn visit<B>(
+        &self,
+        input: Value,
+        mut visitor: impl FnMut(Value) -> ControlFlow<B>,
+    ) -> Result<ControlFlow<B>, JsonFilterError> {
         let inputs = RcIter::new(core::iter::empty());
-        let mut outputs = self.filter.run((Ctx::new([], &inputs), Val::from(input)));
-        let output = outputs
-            .next()
-            .ok_or(JsonFilterError::NoOutput)?
-            .map_err(execution_error)?;
-        to_json(&output)
-    }
-
-    pub(crate) fn all(&self, input: Value) -> Result<Vec<Value>, JsonFilterError> {
-        let inputs = RcIter::new(core::iter::empty());
-        self.filter
-            .run((Ctx::new([], &inputs), Val::from(input)))
-            .map(|output| to_json(&output.map_err(execution_error)?))
-            .collect()
+        for output in self.filter.run((Ctx::new([], &inputs), Val::from(input))) {
+            let value = to_json(&output.map_err(execution_error)?)?;
+            if let ControlFlow::Break(value) = visitor(value) {
+                return Ok(ControlFlow::Break(value));
+            }
+        }
+        Ok(ControlFlow::Continue(()))
     }
 }
 

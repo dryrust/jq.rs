@@ -6,6 +6,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## Unreleased
+### Added
+- `JsonFilter::filter_json_visit` for incremental output and early stopping
+
 ### Fixed
 - Return execution errors for `halt` and `halt_error` instead of exiting
 - Report unrepresentable output numbers instead of panicking

@@ -2,7 +2,7 @@
 
 use crate::{JsonFilterError, jaq::Program};
 use alloc::vec::Vec;
-use core::str::FromStr;
+use core::{ops::ControlFlow, str::FromStr};
 use serde_json::Value;
 
 /// A compiled jq-style program that can be reused across JSON inputs.
@@ -37,7 +37,9 @@ impl JsonFilter {
     /// Later results and errors are not evaluated. Use [`Self::filter_json_all`]
     /// to retain all results and detect errors after the first result.
     pub fn filter_json(&self, input: Value) -> Result<Value, JsonFilterError> {
-        self.program.first(input)
+        self.filter_json_visit(input, ControlFlow::Break)?
+            .break_value()
+            .ok_or(JsonFilterError::NoOutput)
     }
 
     /// Parses one JSON value and collects all filter results in order.
@@ -66,6 +68,43 @@ impl JsonFilter {
     /// # Ok::<(), jq::JsonFilterError>(())
     /// ```
     pub fn filter_json_all(&self, input: Value) -> Result<Vec<Value>, JsonFilterError> {
-        self.program.all(input)
+        let mut values = Vec::new();
+        let _ = self.filter_json_visit(input, |value| {
+            values.push(value);
+            ControlFlow::<()>::Continue(())
+        })?;
+        Ok(values)
+    }
+
+    /// Delivers results in order without buffering them in the wrapper.
+    ///
+    /// Return [`ControlFlow::Break`] to stop immediately and return its value.
+    /// Natural exhaustion returns [`ControlFlow::Continue`], including for an
+    /// empty output stream. Evaluation or conversion errors stop iteration and
+    /// are returned after any earlier values have reached the visitor. Errors
+    /// after an early break are not evaluated. The filter itself may still
+    /// buffer intermediate values, for example when sorting an array.
+    ///
+    /// ```
+    /// use core::ops::ControlFlow;
+    /// use jq::JsonFilter;
+    /// use serde_json::json;
+    ///
+    /// let filter: JsonFilter = "repeat(.)".parse()?;
+    /// let mut count = 0;
+    /// let stopped = filter.filter_json_visit(json!(1), |_| {
+    ///     count += 1;
+    ///     if count == 3 { ControlFlow::Break(count) }
+    ///     else { ControlFlow::Continue(()) }
+    /// })?;
+    /// assert_eq!(stopped, ControlFlow::Break(3));
+    /// # Ok::<(), jq::JsonFilterError>(())
+    /// ```
+    pub fn filter_json_visit<B>(
+        &self,
+        input: Value,
+        visitor: impl FnMut(Value) -> ControlFlow<B>,
+    ) -> Result<ControlFlow<B>, JsonFilterError> {
+        self.program.visit(input, visitor)
     }
 }

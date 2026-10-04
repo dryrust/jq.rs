@@ -67,13 +67,6 @@ requires no caller code changes wherever possible.
 
 ## P3: Focused extensions and maintenance
 
-- [ ] Offer incremental output consumption.
-  `src/jaq.rs:84-124` exposes either one result or a fully buffered vector.
-  Add an iterator or visitor API that delivers values and execution errors
-  incrementally and permits early stopping. Test result/error ordering and
-  bounded consumption of `repeat(.)`; keep collection as a convenience
-  layer over the same evaluation path.
-
 - [ ] Support externally supplied variable bindings.
   `src/jaq.rs:55-57,86,122` compiles without external variable names and
   executes with `Ctx::new([])`. Add a focused constructor/builder for named
