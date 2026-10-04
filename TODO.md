@@ -48,10 +48,10 @@ requires no caller code changes wherever possible.
   expressions (`1 +`), unknown functions, and unbound variables; test stable
   diagnostic information rather than upstream debug formatting.
 
-- [ ] Add target coverage to CI.
+- [ ] Add bare-metal backend coverage to CI.
   After fixing the transitive std dependency, add the bare-metal backend check
-  above; include a 32-bit target such as wasm32 to catch target-sensitive
-  assumptions.
+  above. Add 32-bit runtime arithmetic regressions when fixing overflow;
+  compile checks alone cannot detect differing execution behavior.
 
 ## P3: Focused extensions and maintenance
 
