@@ -49,3 +49,43 @@ fn addition_and_subtraction_preserve_exact_intermediates() -> Result<(), JsonFil
     assert_number("18446744073709551616 - 18446744073709551615", "1")?;
     Ok(())
 }
+
+#[test]
+fn multiplication_preserves_large_intermediates() -> Result<(), JsonFilterError> {
+    let max = isize::MAX as i128;
+    let min = isize::MIN as i128;
+    for (left, right) in [(max, 2), (min, -1), (max, max), (min, min)] {
+        assert_number(&format!("{left} * {right}"), &(left * right).to_string())?;
+    }
+    assert_number(
+        &format!("({max} * {max}) - ({max} * ({max} - 1))"),
+        &max.to_string(),
+    )?;
+    Ok(())
+}
+
+#[test]
+fn multiplication_uses_exact_input_and_binding_values() -> Result<(), JsonFilterError> {
+    let max = isize::MAX;
+    let expected = json!((max as u64) * 2);
+    let filter: JsonFilter = ".[0] * .[1]".parse()?;
+    let input = json!([max, 2]);
+    assert_eq!(filter.filter_json(input.clone())?, expected);
+    assert_eq!(filter.filter_json_str(input.to_string())?, expected);
+    assert_eq!(
+        filter.filter_json_all(input.clone())?,
+        core::slice::from_ref(&expected)
+    );
+    assert_eq!(
+        filter.filter_json_str_all(input.to_string())?,
+        core::slice::from_ref(&expected)
+    );
+    let bound = JsonFilter::with_bindings(". * $factor", [("factor", json!(2))])?;
+    assert_eq!(bound.filter_json(json!(max))?, expected);
+    let streamed: JsonFilter = ". * input".parse()?;
+    assert_eq!(
+        streamed.filter_json_with_inputs(json!(max), [Ok(json!(2))])?,
+        expected
+    );
+    Ok(())
+}
