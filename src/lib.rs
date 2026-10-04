@@ -5,6 +5,9 @@
 //! The default `jaq` feature provides the filtering API. The crate uses `alloc`
 //! and supports `no_std` with `--no-default-features --features jaq`.
 //! The `std` feature is enabled by default.
+//! Without it, jaq provides core filtering, sorting, JSON conversion, Unicode
+//! operations, and basic rounding. Regex, transcendental math, date/time,
+//! environment access, logging, and optional encoding functions require `std`.
 //!
 //! # Features
 //!

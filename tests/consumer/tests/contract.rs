@@ -3,6 +3,8 @@
 // Compile the same public API contracts with downstream dependency features.
 #[path = "../../bindings.rs"]
 mod bindings;
+#[path = "../../capabilities.rs"]
+mod capabilities;
 #[path = "../../diagnostics.rs"]
 mod diagnostics;
 #[path = "../../filter.rs"]

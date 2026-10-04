@@ -62,7 +62,7 @@ impl Program {
         let defs = jaq_core::defs()
             .chain(jaq_std::defs())
             .chain(jaq_json::defs())
-            .filter(|definition| !matches!(definition.name, "halt" | "halt_error"));
+            .filter(available_definition);
         #[cfg(feature = "std")]
         let std_funs = jaq_std::funs::<Data>();
         #[cfg(not(feature = "std"))]
@@ -192,6 +192,44 @@ impl Program {
 
 fn execution_error(error: jaq_json::Error) -> JsonFilterError {
     JsonFilterError::Execute(error.to_string())
+}
+
+fn available_definition(definition: &jaq_core::load::parse::Def<&str>) -> bool {
+    if matches!(definition.name, "halt" | "halt_error") {
+        return false;
+    }
+    if cfg!(feature = "std") {
+        return true;
+    }
+    // jaq compiles every prelude definition, including unused ones. Omit the
+    // aliases whose native dependencies are absent in the no-std function set.
+    !matches!(
+        definition.name,
+        "stderr"
+            | "debug"
+            | "logb"
+            | "significand"
+            | "pow10"
+            | "drem"
+            | "nexttoward"
+            | "scalb"
+            | "gamma"
+            | "test"
+            | "scan"
+            | "match"
+            | "capture"
+            | "splits"
+            | "sub"
+            | "gsub"
+            | "todate"
+            | "fromdate"
+            | "@html"
+            | "@htmld"
+            | "@uri"
+            | "@urid"
+            | "@base64"
+            | "@base64d"
+    ) && !(definition.name == "split" && definition.args.len() == 2)
 }
 
 // jaq-json 2.0.3 uses isize::abs for numeric length, which overflows at MIN.

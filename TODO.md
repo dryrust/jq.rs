@@ -12,10 +12,9 @@ requires no caller code changes wherever possible.
 
 ## P1: Correctness and portability
 
-- [ ] Verify no-std capability boundaries.
-  Test core filtering and float rounding without std, and document optional
-  standard-library functions that require std. Compile a consumer using the
-  public API on bare metal, rather than checking only the library itself.
+- [ ] Verify the public API on bare metal.
+  Compile a no-std consumer using filtering, bindings, and auxiliary inputs,
+  rather than checking only the library itself.
 
 - [ ] Define JSON-output compatibility for jaq-json 2.x.
   Test rejection of binary strings, invalid UTF-8, and non-string object keys.
