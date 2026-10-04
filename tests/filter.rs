@@ -6,6 +6,24 @@ use jq::{JsonFilter, JsonFilterError};
 use serde_json::json;
 
 #[test]
+fn default_filter_is_identity() -> Result<(), JsonFilterError> {
+    let filter = JsonFilter::default();
+    for input in [
+        json!(null),
+        json!({"nested": [true, "日本語 🦀"]}),
+        json!(i64::MIN),
+        json!(i64::MAX),
+        json!(u64::MAX),
+    ] {
+        assert_eq!(filter.filter_json(input.clone())?, input);
+        assert_eq!(filter.filter_json_str(input.to_string())?, input);
+        assert_eq!(filter.filter_json_all(input.clone())?, [input.clone()]);
+        assert_eq!(filter.filter_json_str_all(input.to_string())?, [input]);
+    }
+    Ok(())
+}
+
+#[test]
 fn invalid_programs_report_compilation_diagnostics() {
     for program in ["[", "1 +", "unknown_function", "$unbound"] {
         match program.parse::<JsonFilter>() {

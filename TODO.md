@@ -90,10 +90,10 @@ requires no caller code changes wherever possible.
   diagnostic information rather than upstream debug formatting.
 
 - [ ] Cover filter construction and reuse in integration tests.
-  Add explicit regressions for `Default`, `Clone`, and reuse across distinct
-  inputs. Assert that default construction is identity. Reuse a compiled filter
+  Add explicit regressions for `Clone` and reuse across distinct inputs.
+  Reuse a compiled filter
   across distinct inputs, including a realistic nested selection pipeline,
-  Unicode strings, and exact signed/unsigned integer boundaries. Exercise
+  and Unicode strings. Exercise
   malformed JSON and immediate execution errors in the single-result APIs
   as well as the collection APIs.
 
