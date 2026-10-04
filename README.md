@@ -1,7 +1,7 @@
 # jq.rs
 
 [![License](https://img.shields.io/badge/license-Public%20Domain-blue.svg)](https://unlicense.org)
-[![Compatibility](https://img.shields.io/badge/rust-1.85%2B-blue)](https://blog.rust-lang.org/2025/02/20/Rust-1.85.0/)
+[![Compatibility](https://img.shields.io/badge/rust-1.97%2B-blue)](https://www.rust-lang.org)
 [![Package](https://img.shields.io/crates/v/jq)](https://crates.io/crates/jq)
 [![Documentation](https://docs.rs/jq/badge.svg)](https://docs.rs/jq/)
 
@@ -15,7 +15,7 @@
 
 ## 🛠️ Prerequisites
 
-- [Rust](https://rust-lang.org) 1.85+ (2024 edition)
+- [Rust](https://rust-lang.org) 1.97+ (2024 edition)
 
 ## ⬇️ Installation
 

@@ -66,13 +66,6 @@ requires no caller code changes wherever possible.
   both backends, including empty output, multiple results, and errors after
   the first result.
 
-- [ ] Declare and enforce the Rust 1.97 MSRV.
-  Set `rust-version = "1.97"` in `Cargo.toml:8`; its current 1.85 entry is
-  commented out. Align the compatibility badge and prerequisite in
-  `README.md:4,18`. Explicitly install and test 1.97 in
-  `.github/workflows/ci.yaml`, alongside stable, instead of depending on
-  whichever compiler the runner image supplies.
-
 - [ ] Define object-order behavior across dependency feature combinations.
   `src/jaq.rs:77,102` parses through serde_json's default sorted map.
   Collecting `.[]` on `{"z":1,"a":2}` yields `[2,1]`; `keys_unsorted` yields

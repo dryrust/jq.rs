@@ -13,11 +13,18 @@ env:
 
 jobs:
   build-ubuntu:
-    name: Build on Ubuntu
+    name: Build on Ubuntu (${{ matrix.rust }})
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        rust: ["1.97.0", stable]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ matrix.rust }}
       - name: Build
         run: cargo build
       - name: Build examples
@@ -30,6 +37,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
       - name: Build
         run: cargo build
       - name: Build examples
