@@ -69,9 +69,11 @@ mod error;
 pub use error::JsonFilterError;
 
 #[cfg(feature = "jaq")]
+mod filter;
+#[cfg(feature = "jaq")]
 mod jaq;
 #[cfg(feature = "jaq")]
-pub use jaq::*;
+pub use filter::JsonFilter;
 
 #[doc = include_str!("../README.md")]
 #[cfg(doctest)]

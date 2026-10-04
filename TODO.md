@@ -31,14 +31,6 @@ requires no caller code changes wherever possible.
 
 ## P2: Build, API, and regression guarantees
 
-- [ ] Encapsulate feature-selected backends behind a uniform public API.
-  `JsonFilter` currently lives in `src/jaq.rs`. Keep public types, methods, and
-  signatures independent of the selected implementation. Use private
-  adapters and internal feature-gated dispatch; translate backend errors
-  into crate-owned diagnostics. Backend selection must not require public
-  selectors, traits, or type parameters. Compile the same consumer code and
-  run common API contract tests for each supported backend feature.
-
 - [ ] Implement upstream `jq` as the first additional backend.
   Prioritize this before integrating further Rust jq implementations. Use
   the existing `jq` feature for a private, std-dependent adapter that invokes
