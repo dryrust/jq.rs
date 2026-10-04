@@ -12,17 +12,12 @@ requires no caller code changes wherever possible.
 
 ## P1: Correctness and portability
 
-- [ ] Verify the public API on bare metal.
-  Compile a no-std consumer using filtering, bindings, and auxiliary inputs,
-  rather than checking only the library itself.
-
 - [ ] Define JSON-output compatibility for jaq-json 2.x.
   Test rejection of binary strings, invalid UTF-8, and non-string object keys.
   Cover computed big integers with consumer arbitrary precision enabled.
 
 ## P2: Build, API, and regression guarantees
 
-- [ ] Add bare-metal backend coverage to CI.
-  After fixing the transitive std dependency, add the bare-metal backend check
-  above. Add 32-bit runtime arithmetic regressions when fixing overflow;
+- [ ] Add 32-bit runtime arithmetic coverage to CI.
+  Execute the arithmetic regressions in debug and release on a 32-bit target;
   compile checks alone cannot detect differing execution behavior.

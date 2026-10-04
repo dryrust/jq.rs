@@ -12,6 +12,24 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
+  bare-metal:
+    name: Bare-metal consumer (${{ matrix.rust }})
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        rust: ["1.97.0", stable]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ matrix.rust }}
+          targets: thumbv7em-none-eabihf
+      - name: Check functional no-std consumer
+        run: >-
+          cargo check --locked -p jq-consumer-tests --lib
+          --no-default-features --features jaq --target thumbv7em-none-eabihf
   upstream-jq:
     name: Upstream jq (${{ matrix.rust }})
     runs-on: ubuntu-latest
