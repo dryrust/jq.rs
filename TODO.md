@@ -40,14 +40,6 @@ requires no caller code changes wherever possible.
   both backends, including empty output, multiple results, and errors after
   the first result.
 
-- [ ] Define object-order behavior across dependency feature combinations.
-  `src/jaq.rs:77,102` parses through serde_json's default sorted map.
-  Collecting `.[]` on `{"z":1,"a":2}` yields `[2,1]`; `keys_unsorted` yields
-  `["a","z"]`. Enabling `serde_json/preserve_order` changes these to `[1,2]`
-  and `["z","a"]`. Choose and document the ordering contract, expose any
-  order-preservation option without defeating the no_std feature contract,
-  and test string and `Value` inputs under consumer feature unification.
-
 - [ ] Replace raw compilation debug dumps with useful diagnostics.
   `src/jaq.rs:46-65` turns loader/compiler errors into debug strings containing
   the entire source, then `JsonFilterError::Compile` debug-formats that vector

@@ -56,6 +56,18 @@
 //! A consumer enabling `serde_json/arbitrary_precision` can retain such literals
 //! exactly. This does not make backend arithmetic arbitrary-precision; jaq uses
 //! machine-sized integers and floating-point arithmetic internally.
+//!
+//! # Object order
+//!
+//! Input and output objects use `serde_json::Map` ordering. By default, input
+//! keys are sorted, so `.[]` on `{"z":1,"a":2}` yields `2, 1` and
+//! `keys_unsorted` yields `["a", "z"]`. Consumers can enable
+//! `serde_json/preserve_order` to retain insertion order instead (`1, 2` and
+//! `["z", "a"]`); that dependency feature requires the standard library.
+//! This applies to both string and `Value` inputs, including nested objects.
+//! Cargo unifies dependency features, so another dependency can enable this
+//! behavior too. Objects constructed within a jaq program retain the backend's
+//! insertion order until converted to output JSON; `keys` explicitly sorts keys.
 
 #![no_std]
 #![forbid(unsafe_code)]
