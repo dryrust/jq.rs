@@ -48,7 +48,21 @@ impl FromStr for JsonFilter {
             path: (),
         };
         let defs = jaq_std::defs().chain(jaq_json::defs());
-        let funs = jaq_std::funs().chain(jaq_json::funs());
+        let funs = jaq_std::funs()
+            .chain(jaq_json::funs())
+            .map(|(name, args, implementation)| {
+                // Process termination is inappropriate in an embedded filter.
+                let implementation = match name {
+                    "halt" | "halt_error" => Native::new(|_, _| {
+                        jaq_core::box_iter::box_once(Err(jaq_json::Error::str(
+                            "process termination is disabled",
+                        )
+                        .into()))
+                    }),
+                    _ => implementation,
+                };
+                (name, args, implementation)
+            });
 
         let loader = Loader::new(defs);
         let arena = Arena::default();

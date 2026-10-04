@@ -12,14 +12,6 @@ requires no caller code changes wherever possible.
 
 ## P1: Correctness and portability
 
-- [ ] Prevent filters from terminating the embedding process.
-  `src/jaq.rs:40-41` registers all jaq standard functions. Evaluating `halt`
-  through `filter_json_all(Value::Null)` exits the process with status 0;
-  `halt_error(5)` exits with status 5 and writes output. Neither returns a
-  `JsonFilterError`. Omit or override these process-level builtins with
-  library-appropriate outcomes. Add subprocess regressions for both single-
-  and multi-result methods; unwinding cannot intercept process termination.
-
 - [ ] Make conversion of backend results into JSON fallible.
   `src/jaq.rs:87-91,123` uses jaq-json's infallible conversion, which internally
   unwraps a parse result for string-backed numbers. The valid filter `1e400`
