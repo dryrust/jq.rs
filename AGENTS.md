@@ -46,3 +46,15 @@
   qualified names or explicit, least-power imports. For example, prefer
   `core::error::Error` and `alloc::string::String` over `std` analogs.
 - After making changes to a crate, as a last step run `cargo doc` on it.
+
+# Architecture
+- `jaq` is one of several intended backends; other Rust jq implementations
+  may be incorporated.
+- The next backend to implement is the upstream `jq` executable invoked as a
+  subprocess (`jq` feature, requires `std`).
+- Feature flags select the implementation behind one uniform public API.
+  Keep backend abstractions private: callers should not name backend types,
+  traits, type parameters, or selectors.
+- Encapsulate backend-specific compilation, execution, and errors in internal
+  adapters. Switching backend flags should require no caller code changes
+  wherever possible.
