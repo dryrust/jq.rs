@@ -31,10 +31,9 @@ requires no caller code changes wherever possible.
 
 ## P2: Build, API, and regression guarantees
 
-- [ ] Share API contract tests and CI coverage with the upstream jq backend.
-  Run shared contract tests against
-  both backends, including empty output, multiple results, and errors after
-  the first result.
+- [ ] Add upstream jq to CI.
+  Install jq and run jq-only library and consumer tests, including doctests.
+  Check the subprocess adapter with Clippy; all-features selects jaq instead.
 
 - [ ] Replace raw compilation debug dumps with useful diagnostics.
   `src/jaq.rs:46-65` turns loader/compiler errors into debug strings containing

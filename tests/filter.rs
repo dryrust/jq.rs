@@ -1,9 +1,18 @@
 // This is free and unencumbered software released into the public domain.
 
-#![cfg(feature = "jaq")]
+#![cfg(any(feature = "jaq", feature = "jq"))]
 
 use jq::{JsonFilter, JsonFilterError};
 use serde_json::json;
+
+#[test]
+fn auxiliary_input_is_empty() -> Result<(), JsonFilterError> {
+    let filter: JsonFilter = "inputs".parse()?;
+    assert!(filter.filter_json_all(json!([1, 2]))?.is_empty());
+    let filter: JsonFilter = "input".parse()?;
+    assert!(filter.filter_json(json!(null)).is_err());
+    Ok(())
+}
 
 #[test]
 fn execution_diagnostics_outlive_the_filter() -> Result<(), JsonFilterError> {

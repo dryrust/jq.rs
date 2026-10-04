@@ -7,9 +7,10 @@ publish = false
 
 [features]
 default = ["all", "std"]
-all = ["jaq"]
+all = ["jaq", "jq"]
 std = ["jq/std", "serde_json/std"]
 jaq = ["jq/jaq"]
+jq = ["std", "jq/jq"]
 arbitrary_precision = ["serde_json/arbitrary_precision"]
 preserve_order = ["std", "serde_json/preserve_order"]
 
