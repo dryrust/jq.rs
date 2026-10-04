@@ -90,11 +90,8 @@ requires no caller code changes wherever possible.
   diagnostic information rather than upstream debug formatting.
 
 - [ ] Cover filter construction and reuse in integration tests.
-  `tests/filter.rs` exercises result collection but has no failing
-  `FromStr` cases or explicit regressions for `Default`, `Clone`, or reuse
-  across distinct inputs.
-  Assert that invalid programs return nonempty `Compile` diagnostics and
-  that default construction is identity. Reuse a compiled and cloned filter
+  Add explicit regressions for `Default`, `Clone`, and reuse across distinct
+  inputs. Assert that default construction is identity. Reuse a compiled filter
   across distinct inputs, including a realistic nested selection pipeline,
   Unicode strings, and exact signed/unsigned integer boundaries. Exercise
   malformed JSON and immediate execution errors in the single-result APIs

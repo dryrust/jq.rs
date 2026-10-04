@@ -6,6 +6,19 @@ use jq::{JsonFilter, JsonFilterError};
 use serde_json::json;
 
 #[test]
+fn invalid_programs_report_compilation_diagnostics() {
+    for program in ["[", "1 +", "unknown_function", "$unbound"] {
+        match program.parse::<JsonFilter>() {
+            Err(JsonFilterError::Compile(diagnostics)) => {
+                assert!(!diagnostics.is_empty(), "{program}");
+                assert!(diagnostics.iter().all(|message| !message.is_empty()));
+            }
+            _ => panic!("expected compilation diagnostics for {program}"),
+        }
+    }
+}
+
+#[test]
 fn collects_all_results_in_order() -> Result<(), JsonFilterError> {
     let filter: JsonFilter = ".[]".parse()?;
     let input = json!([1, null, false, {"name": "example"}, [2, 3]]);
