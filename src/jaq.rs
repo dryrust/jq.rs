@@ -14,6 +14,8 @@ use jaq_core::{
 use jaq_json::Val;
 use serde_json::Value;
 
+mod diagnostic;
+
 #[derive(Clone, Default)]
 pub(crate) struct Program {
     filter: Filter<Native<Val>>,
@@ -48,18 +50,9 @@ impl Program {
         let loader = Loader::new(defs);
         let arena = Arena::default();
 
-        let modules = loader.load(&arena, program).map_err(|errors| {
-            JsonFilterError::Compile(
-                errors
-                    .into_iter()
-                    .map(|error| CompilationDiagnostic {
-                        phase: CompilationPhase::Load,
-                        message: format!("{error:?}"),
-                        span: None,
-                    })
-                    .collect::<Vec<_>>(),
-            )
-        })?;
+        let modules = loader
+            .load(&arena, program)
+            .map_err(|errors| JsonFilterError::Compile(diagnostic::load_errors(errors)))?;
 
         let names: Vec<_> = bindings
             .iter()
