@@ -98,8 +98,7 @@ requires no caller code changes wherever possible.
   Also explain the currently empty `unstable` flag.
 
 - [ ] Document the public types and backend compatibility contract.
-  Add rustdoc to `JsonFilter`, `JsonFilterError`, and its variants in
-  `src/jaq.rs`, and expand the crate-level overview in `src/lib.rs` with a
+  Expand the crate-level overview in `src/lib.rs` with a
   compile/apply/reuse example and feature requirements. Explain default
   identity behavior and JSON-parse versus program-compilation failures.
   Record unsupported module loading and external variables, empty auxiliary

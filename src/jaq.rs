@@ -9,21 +9,31 @@ use jaq_core::{
 use jaq_json::Val;
 use serde_json::Value;
 
+/// A failure to parse JSON, compile a filter, or evaluate it.
 #[derive(Debug, thiserror::Error)]
 pub enum JsonFilterError {
+    /// The input string is not exactly one valid JSON value.
     #[error("parse error: {0}")]
     Parse(#[from] serde_json::Error),
 
+    /// The filter program could not be loaded or compiled.
     #[error("compilation error: {0:?}")]
     Compile(Vec<String>),
 
+    /// A single-result method evaluated a filter that produced no values.
     #[error("no output")]
     NoOutput,
 
+    /// Evaluation failed, for example because of an invalid operand type.
     #[error("execution error: {0}")]
     Execute(jaq_json::Error),
 }
 
+/// A compiled jq-style program that can be reused across JSON inputs.
+///
+/// Parse a program with [`core::str::FromStr`]. [`Default`] constructs the
+/// identity filter (`.`); cloning preserves the compiled program. Each method
+/// starts a fresh evaluation with the supplied input.
 #[derive(Clone, Default)]
 pub struct JsonFilter {
     filter: Filter<Native<Val>>,
