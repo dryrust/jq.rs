@@ -65,12 +65,6 @@ requires no caller code changes wherever possible.
   expressions (`1 +`), unknown functions, and unbound variables; test stable
   diagnostic information rather than upstream debug formatting.
 
-- [ ] Document and test the backend numeric compatibility contract.
-  Record numeric differences: `nan`, `infinite`, and `1 / 0` currently
-  become JSON null, while literals beyond u64 may lose precision unless a
-  consumer enables `serde_json/arbitrary_precision`. Add focused regressions
-  for the chosen numeric contract.
-
 - [ ] Add a reproducible feature and target matrix to CI.
   `.github/workflows/ci.yaml` tests only default features on Ubuntu and
   Windows. Run locked tests and doctests with defaults, all features, no

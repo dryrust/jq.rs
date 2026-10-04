@@ -6,6 +6,39 @@ use jq::{JsonFilter, JsonFilterError};
 use serde_json::{Value, json};
 
 #[test]
+fn nonfinite_results_become_json_null() -> Result<(), JsonFilterError> {
+    for program in ["nan", "infinite", "-infinite", "1 / 0", "0 / 0"] {
+        for (program, expected) in [
+            (program.to_owned(), Value::Null),
+            (
+                format!("[{{number: ({program})}}]"),
+                json!([{"number": null}]),
+            ),
+        ] {
+            let filter: JsonFilter = program.parse()?;
+            assert_eq!(filter.filter_json(Value::Null)?, expected);
+            assert_eq!(filter.filter_json_str("null")?, expected);
+            assert_eq!(
+                filter.filter_json_all(Value::Null)?,
+                core::slice::from_ref(&expected)
+            );
+            assert_eq!(filter.filter_json_str_all("null")?, [expected]);
+        }
+    }
+    Ok(())
+}
+
+#[test]
+fn large_literals_follow_serde_json_number_precision() -> Result<(), JsonFilterError> {
+    let literal = "18446744073709551617";
+    let expected: Value = serde_json::from_str(literal)?;
+    let filter: JsonFilter = literal.parse()?;
+    assert_eq!(filter.filter_json(Value::Null)?, expected);
+    assert_eq!(filter.filter_json_all(Value::Null)?, [expected]);
+    Ok(())
+}
+
+#[test]
 fn unrepresentable_output_returns_an_error() -> Result<(), JsonFilterError> {
     // Consumer feature unification may make this number representable.
     let number = "1e400".parse::<serde_json::Number>();

@@ -46,6 +46,16 @@
 //! unsupported. Auxiliary input is empty: `inputs` produces no values and
 //! `input` encounters exhaustion. Backend selection is intended to remain an
 //! implementation detail of the public filtering API.
+//!
+//! # Numbers
+//!
+//! jaq's nonfinite floating-point results (`nan`, `infinite`, `1 / 0`) become
+//! JSON null, including inside arrays and objects. Literal numbers are converted
+//! using `serde_json::Number`: integers beyond its exact range may lose precision,
+//! and out-of-range exponents such as `1e400` return an output conversion error.
+//! A consumer enabling `serde_json/arbitrary_precision` can retain such literals
+//! exactly. This does not make backend arithmetic arbitrary-precision; jaq uses
+//! machine-sized integers and floating-point arithmetic internally.
 
 #![no_std]
 #![forbid(unsafe_code)]
