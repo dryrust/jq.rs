@@ -30,9 +30,26 @@ impl Program {
             code: input,
             path: (),
         };
-        let defs = jaq_std::defs().chain(jaq_json::defs());
+        // Match upstream jq: input exhaustion is an error, while inputs simply
+        // ends. jaq's default `def input: first(inputs)` silently yields nothing.
+        let defs = jaq_std::defs()
+            .filter(|definition| definition.name != "input")
+            .chain(jaq_json::defs());
         let funs = jaq_std::funs()
             .chain(jaq_json::funs())
+            .chain(core::iter::once((
+                "input",
+                jaq_std::v(0),
+                Native::new(|_, cv| {
+                    let value =
+                        cv.0.inputs()
+                            .next()
+                            .unwrap_or_else(|| Err("auxiliary input exhausted".into()));
+                    jaq_core::box_iter::box_once(
+                        value.map_err(|message| jaq_json::Error::str(message).into()),
+                    )
+                }),
+            )))
             .map(|(name, args, implementation)| {
                 // Process termination is inappropriate in an embedded filter.
                 let implementation = match name {
@@ -77,9 +94,19 @@ impl Program {
         &self,
         input: Value,
         bindings: &[(String, Value)],
+        visitor: impl FnMut(Value) -> ControlFlow<B>,
+    ) -> Result<ControlFlow<B>, JsonFilterError> {
+        self.visit_with_inputs(input, bindings, core::iter::empty(), visitor)
+    }
+
+    pub(crate) fn visit_with_inputs<B>(
+        &self,
+        input: Value,
+        bindings: &[(String, Value)],
+        auxiliary: impl Iterator<Item = Result<Value, String>>,
         mut visitor: impl FnMut(Value) -> ControlFlow<B>,
     ) -> Result<ControlFlow<B>, JsonFilterError> {
-        let inputs = RcIter::new(core::iter::empty());
+        let inputs = RcIter::new(auxiliary.map(|value| value.map(Val::from)));
         let values = bindings.iter().map(|(_, value)| Val::from(value.clone()));
         for output in self
             .filter
@@ -117,4 +144,50 @@ fn to_json(value: &Val) -> Result<Value, JsonFilterError> {
                 .collect::<Result<_, JsonFilterError>>()?,
         ),
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use alloc::vec;
+    use serde_json::json;
+
+    #[test]
+    fn auxiliary_values_are_consumed_in_order() -> Result<(), JsonFilterError> {
+        let program = Program::compile("[., input, inputs]", &[])?;
+        let auxiliary = [Ok(json!(1)), Ok(json!(2))].into_iter();
+        assert_eq!(
+            program.visit_with_inputs(json!(0), &[], auxiliary, ControlFlow::Break)?,
+            ControlFlow::Break(json!([0, 1, 2]))
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn auxiliary_errors_are_catchable_and_exhaustion_is_explicit() -> Result<(), JsonFilterError> {
+        let program = Program::compile("try input catch .", &[])?;
+        assert_eq!(
+            program.visit_with_inputs(
+                json!(null),
+                &[],
+                [Err(String::from("read failed"))].into_iter(),
+                ControlFlow::Break
+            )?,
+            ControlFlow::Break(json!("read failed"))
+        );
+        let program = Program::compile("input", &[])?;
+        assert!(matches!(
+            program.visit(json!(null), &[], ControlFlow::Break),
+            Err(JsonFilterError::Execute(_))
+        ));
+        let program = Program::compile("inputs", &[])?;
+        let mut seen = vec![];
+        let status = program.visit_with_inputs(json!(null), &[], core::iter::empty(), |value| {
+            seen.push(value);
+            ControlFlow::<()>::Continue(())
+        })?;
+        assert_eq!(status, ControlFlow::Continue(()));
+        assert!(seen.is_empty());
+        Ok(())
+    }
 }

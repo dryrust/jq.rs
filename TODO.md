@@ -43,8 +43,6 @@ requires no caller code changes wherever possible.
 ## P3: Focused extensions and maintenance
 
 - [ ] Accept an explicit auxiliary input stream.
-  `src/jaq.rs:85,120` always supplies an empty `RcIter`, so `input` and
-  `inputs` yield nothing even when a main input value is present. Add an
-  API accepting additional values for these builtins, with explicit
-  exhaustion and input-error semantics. Test consumption order and keep
-  the current single-JSON-value string methods' contract intact.
+  Add fallible input handling to the jq subprocess adapter, expose it through
+  the common API, and test consumption order and error semantics on both
+  backends. Keep single-JSON-value string methods' existing parsing contract.
