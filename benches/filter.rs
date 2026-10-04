@@ -1,6 +1,6 @@
 // This is free and unencumbered software released into the public domain.
 
-use core::hint::black_box;
+use core::{hint::black_box, ops::ControlFlow};
 use jq::JsonFilter;
 use serde_json::{Value, json};
 use std::time::Instant;
@@ -58,7 +58,7 @@ fn main() {
             .map(|id| json!({"id": id, "profile": {"name": "日本語 🦀", "tags": [1, 2, 3]}}))
             .collect(),
     );
-    for (size, input) in [("small", input), ("large-nested", large)] {
+    for (size, input) in [("small", input), ("large-nested", large.clone())] {
         let text = input.to_string();
         let identity = JsonFilter::default();
         assert_eq!(identity.filter_json_str(&text).unwrap(), input);
@@ -78,6 +78,34 @@ fn main() {
         });
         measure(&format!("identity/{size}/string"), iterations, || {
             identity.filter_json_str(black_box(&text)).unwrap()
+        });
+    }
+
+    let elements: JsonFilter = ".[]".parse().unwrap();
+    for (size, input) in [("small", json!([1, 2, 3, 4])), ("large-nested", large)] {
+        assert_eq!(elements.filter_json(input.clone()).unwrap(), input[0]);
+        assert_eq!(
+            elements.filter_json_all(input.clone()).unwrap(),
+            *input.as_array().unwrap()
+        );
+        measure(&format!("outputs/{size}/first"), iterations, || {
+            elements.filter_json(black_box(input.clone())).unwrap()
+        });
+        measure(&format!("outputs/{size}/collect"), iterations, || {
+            elements.filter_json_all(black_box(input.clone())).unwrap()
+        });
+        measure(&format!("outputs/{size}/visit-all"), iterations, || {
+            elements
+                .filter_json_visit(black_box(input.clone()), |value| {
+                    black_box(value);
+                    ControlFlow::<()>::Continue(())
+                })
+                .unwrap()
+        });
+        measure(&format!("outputs/{size}/visit-first"), iterations, || {
+            elements
+                .filter_json_visit(black_box(input.clone()), ControlFlow::Break)
+                .unwrap()
         });
     }
 }

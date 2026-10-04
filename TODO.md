@@ -59,7 +59,3 @@ requires no caller code changes wherever possible.
   API accepting additional values for these builtins, with explicit
   exhaustion and input-error semantics. Test consumption order and keep
   the current single-JSON-value string methods' contract intact.
-
-- [ ] Benchmark compilation, conversion, and filter reuse before optimizing.
-  Extend `benches/filter.rs` with first-result versus full collection and
-  incremental output consumption over large inputs.

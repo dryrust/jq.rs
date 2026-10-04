@@ -18,3 +18,9 @@ the latter includes input cloning, with a clone-only baseline. Identity cases
 measure the public round trip, including checked output conversion and result
 destruction. Input JSON text is serialized before timing. The string and Value
 cases therefore compare parsing against cloning an existing owned value.
+
+Output cases apply `.[]` to small and large nested arrays. First-result and
+early-break cases evaluate only one output; collect and visit-all cases consume
+every output. All include input cloning and conversion, while only collection
+buffers every converted result. These timings measure throughput, not peak
+memory use; use an allocation profiler before drawing memory conclusions.
