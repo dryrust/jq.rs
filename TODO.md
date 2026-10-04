@@ -56,11 +56,9 @@ requires no caller code changes wherever possible.
   expressions (`1 +`), unknown functions, and unbound variables; test stable
   diagnostic information rather than upstream debug formatting.
 
-- [ ] Add a reproducible feature and target matrix to CI.
-  `.github/workflows/ci.yaml` tests only default features on Ubuntu and
-  Windows. Run locked tests and doctests with defaults, all features, no
-  defaults, and `--no-default-features --features jaq`. After fixing the
-  transitive std dependency, add the bare-metal backend check above; include
+- [ ] Add target and consumer feature matrices to CI.
+  After fixing the transitive std dependency, add the bare-metal backend check
+  above; include
   a 32-bit target such as wasm32 to catch target-sensitive assumptions.
   Exercise serde_json precision/order feature combinations in a consumer
   fixture so downstream feature unification remains covered.

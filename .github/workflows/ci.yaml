@@ -31,11 +31,20 @@ jobs:
         env:
           RUSTDOCFLAGS: -D warnings
   build-ubuntu:
-    name: Build on Ubuntu (${{ matrix.rust }})
+    name: Ubuntu (${{ matrix.rust }}, ${{ matrix.features.name }})
     runs-on: ubuntu-latest
     strategy:
       matrix:
         rust: ["1.97.0", stable]
+        features:
+          - name: default
+            args: ""
+          - name: all
+            args: --all-features
+          - name: none
+            args: --no-default-features
+          - name: jaq
+            args: --no-default-features --features jaq
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -44,11 +53,11 @@ jobs:
         with:
           toolchain: ${{ matrix.rust }}
       - name: Build
-        run: cargo build
+        run: cargo build --locked ${{ matrix.features.args }}
       - name: Build examples
-        run: cargo build --examples
-      - name: Run tests
-        run: cargo test
+        run: cargo build --locked --examples ${{ matrix.features.args }}
+      - name: Run tests and doctests
+        run: cargo test --locked ${{ matrix.features.args }}
   build-windows:
     name: Build on Windows
     runs-on: windows-latest
@@ -58,8 +67,8 @@ jobs:
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
       - name: Build
-        run: cargo build
+        run: cargo build --locked
       - name: Build examples
-        run: cargo build --examples
+        run: cargo build --locked --examples
       - name: Run tests
-        run: cargo test
+        run: cargo test --locked
