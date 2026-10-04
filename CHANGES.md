@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `JsonFilter::filter_json_visit` for incremental output and early stopping
 
 ### Fixed
+- Return errors for invalid Unicode code points instead of panicking
 - Support the jaq backend on no-std targets
 - Promote overflowing integer arithmetic instead of wrapping or panicking
 - Report `input` exhaustion as an execution error on both backends
@@ -21,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Report unrepresentable output numbers instead of panicking
 
 ### Changed
+- Reject non-JSON backend values with `JsonFilterError::OutputValue`
 - Expose owned compilation diagnostics with phases and optional source spans
 - Require Rust 1.97 or later
 - Store execution error messages independently of backend error types

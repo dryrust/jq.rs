@@ -39,7 +39,7 @@ jobs:
       - name: Run arithmetic regressions
         run: >-
           cargo test --locked --no-default-features --features jaq
-          --test arithmetic --target ${{ matrix.target }}
+          --test arithmetic --test json_output --target ${{ matrix.target }}
           ${{ matrix.profile.args }} -- --test-threads=1
   bare-metal:
     name: Bare-metal consumer (${{ matrix.rust }})

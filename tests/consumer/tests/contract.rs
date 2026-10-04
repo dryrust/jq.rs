@@ -13,6 +13,8 @@ mod diagnostics;
 mod filter;
 #[path = "../../inputs.rs"]
 mod inputs;
+#[path = "../../json_output.rs"]
+mod json_output;
 #[path = "../../numbers.rs"]
 mod numbers;
 #[path = "../../visit.rs"]

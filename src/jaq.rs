@@ -99,6 +99,9 @@ impl Program {
             )
             .map(|(name, args, implementation)| {
                 let implementation = match name {
+                    "implode" => Native::<Data>::new(|cv| {
+                        jaq_core::box_iter::box_once(implode(cv.1).map_err(Into::into))
+                    }),
                     "length" => Native::<Data>::new(|cv| {
                         jaq_core::box_iter::box_once(length(cv.1).map_err(Into::into))
                     }),
@@ -253,6 +256,33 @@ fn length(value: Val) -> jaq_json::ValR {
     })
 }
 
+// jaq-std 3.0.3 negates code points before checking their byte range. Check
+// ranges first so isize::MIN is rejected rather than overflowing in debug.
+fn implode(value: Val) -> jaq_json::ValR {
+    let Val::Arr(values) = value else {
+        return Err(jaq_json::Error::str("implode requires an array"));
+    };
+    let mut bytes = Vec::new();
+    for point in values.iter() {
+        let invalid = || jaq_json::Error::str(format_args!("invalid Unicode code point: {point}"));
+        let value = match point {
+            Val::Num(number) => number.as_isize(),
+            _ => None,
+        }
+        .ok_or_else(invalid)?;
+        if (-255..0).contains(&value) {
+            bytes.push(value.unsigned_abs() as u8);
+        } else {
+            let point = u32::try_from(value)
+                .ok()
+                .and_then(char::from_u32)
+                .ok_or_else(invalid)?;
+            bytes.extend_from_slice(point.encode_utf8(&mut [0; 4]).as_bytes());
+        }
+    }
+    Ok(Val::utf8_str(bytes))
+}
+
 fn from_json(value: Value) -> Val {
     match value {
         Value::Null => Val::Null,
@@ -272,7 +302,7 @@ fn from_json(value: Value) -> Val {
     }
 }
 
-// Check every nested number rather than using jaq-json's panicking conversion.
+// Check numbers, text, and object keys recursively at the JSON API boundary.
 fn to_json(value: &Val) -> Result<Value, JsonFilterError> {
     Ok(match value {
         Val::Null => Value::Null,
@@ -284,11 +314,7 @@ fn to_json(value: &Val) -> Result<Value, JsonFilterError> {
         Val::Num(value) => {
             Value::Number(value.to_string().parse().map_err(JsonFilterError::Output)?)
         }
-        Val::TStr(value) => Value::String(
-            core::str::from_utf8(value)
-                .map_err(|error| JsonFilterError::OutputValue(error.to_string()))?
-                .into(),
-        ),
+        Val::TStr(value) => Value::String(json_string(value)?),
         Val::BStr(_) => {
             return Err(JsonFilterError::OutputValue(
                 "binary strings are not JSON strings".into(),
@@ -299,16 +325,22 @@ fn to_json(value: &Val) -> Result<Value, JsonFilterError> {
             values
                 .iter()
                 .map(|(key, value)| {
-                    let Value::String(key) = to_json(key)? else {
+                    let Val::TStr(key) = key else {
                         return Err(JsonFilterError::OutputValue(
                             "JSON object keys must be strings".into(),
                         ));
                     };
-                    Ok((key, to_json(value)?))
+                    Ok((json_string(key)?, to_json(value)?))
                 })
                 .collect::<Result<_, JsonFilterError>>()?,
         ),
     })
+}
+
+fn json_string(bytes: &[u8]) -> Result<String, JsonFilterError> {
+    core::str::from_utf8(bytes)
+        .map(String::from)
+        .map_err(|error| JsonFilterError::OutputValue(error.to_string()))
 }
 
 #[cfg(test)]

@@ -66,8 +66,15 @@
 //! using `serde_json::Number`: integers beyond its exact range may lose precision,
 //! and out-of-range exponents such as `1e400` return an output conversion error.
 //! A consumer enabling `serde_json/arbitrary_precision` can retain such literals
-//! exactly. jaq promotes overflowing integer arithmetic to big integers;
-//! operations involving floating-point numbers still use floating-point math.
+//! exactly, as well as computed big-integer results. jaq preserves integer
+//! addition, subtraction, multiplication, remainder, and negation by promoting
+//! overflowing intermediates to big integers. Division and operations involving
+//! decimal or floating-point operands use floating-point math. Integer remainder
+//! by zero returns an execution error.
+//!
+//! jaq can construct values outside JSON's type system. Binary strings, invalid
+//! UTF-8 text, and non-string object keys return `JsonFilterError::OutputValue`,
+//! including when nested inside otherwise valid arrays or objects.
 //!
 //! # Object order
 //!
