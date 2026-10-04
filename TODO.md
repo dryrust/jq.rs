@@ -32,8 +32,7 @@ requires no caller code changes wherever possible.
 ## P2: Build, API, and regression guarantees
 
 - [ ] Encapsulate feature-selected backends behind a uniform public API.
-  `JsonFilter` and `JsonFilterError` currently live in `src/jaq.rs`, and
-  `Execute` exposes `jaq_json::Error`. Keep public types, methods, and
+  `JsonFilter` currently lives in `src/jaq.rs`. Keep public types, methods, and
   signatures independent of the selected implementation. Use private
   adapters and internal feature-gated dispatch; translate backend errors
   into crate-owned diagnostics. Backend selection must not require public

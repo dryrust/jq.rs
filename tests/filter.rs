@@ -6,6 +6,20 @@ use jq::{JsonFilter, JsonFilterError};
 use serde_json::json;
 
 #[test]
+fn execution_diagnostics_outlive_the_filter() -> Result<(), JsonFilterError> {
+    let error = {
+        let filter: JsonFilter = r#"error("owned diagnostic")"#.parse()?;
+        filter.filter_json(json!(null)).unwrap_err()
+    };
+    let JsonFilterError::Execute(message) = error else {
+        panic!("expected an execution diagnostic");
+    };
+    let message: std::string::String = message;
+    assert!(message.contains("owned diagnostic"));
+    Ok(())
+}
+
+#[test]
 fn compiled_and_cloned_filters_can_be_reused() -> Result<(), JsonFilterError> {
     let original: JsonFilter = ".users[] | select(.active) | .profile.name".parse()?;
     let cloned = original.clone();

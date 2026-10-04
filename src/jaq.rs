@@ -1,6 +1,7 @@
 // This is free and unencumbered software released into the public domain.
 
-use alloc::{format, string::String, vec::Vec};
+use crate::JsonFilterError;
+use alloc::{format, string::ToString, vec::Vec};
 use core::str::FromStr;
 use jaq_core::{
     Ctx, Filter, Native, RcIter,
@@ -8,30 +9,6 @@ use jaq_core::{
 };
 use jaq_json::Val;
 use serde_json::Value;
-
-/// A failure to parse JSON, compile a filter, or evaluate it.
-#[derive(Debug, thiserror::Error)]
-pub enum JsonFilterError {
-    /// The input string is not exactly one valid JSON value.
-    #[error("parse error: {0}")]
-    Parse(#[from] serde_json::Error),
-
-    /// A filter result cannot be represented as a JSON value.
-    #[error("output conversion error: {0}")]
-    Output(#[source] serde_json::Error),
-
-    /// The filter program could not be loaded or compiled.
-    #[error("compilation error: {0:?}")]
-    Compile(Vec<String>),
-
-    /// A single-result method evaluated a filter that produced no values.
-    #[error("no output")]
-    NoOutput,
-
-    /// Evaluation failed, for example because of an invalid operand type.
-    #[error("execution error: {0}")]
-    Execute(jaq_json::Error),
-}
 
 /// A compiled jq-style program that can be reused across JSON inputs.
 ///
@@ -115,7 +92,7 @@ impl JsonFilter {
         let output = outputs
             .next()
             .ok_or(JsonFilterError::NoOutput)?
-            .map_err(JsonFilterError::Execute)?;
+            .map_err(execution_error)?;
         to_json(&output)
     }
 
@@ -148,9 +125,13 @@ impl JsonFilter {
         let inputs = RcIter::new(core::iter::empty());
         self.filter
             .run((Ctx::new([], &inputs), Val::from(input)))
-            .map(|output| to_json(&output.map_err(JsonFilterError::Execute)?))
+            .map(|output| to_json(&output.map_err(execution_error)?))
             .collect()
     }
+}
+
+fn execution_error(error: jaq_json::Error) -> JsonFilterError {
+    JsonFilterError::Execute(error.to_string())
 }
 
 // Check every nested number rather than using jaq-json's panicking conversion.

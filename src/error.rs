@@ -1,0 +1,27 @@
+// This is free and unencumbered software released into the public domain.
+
+use alloc::{string::String, vec::Vec};
+
+/// A failure to parse JSON, compile a filter, or evaluate it.
+#[derive(Debug, thiserror::Error)]
+pub enum JsonFilterError {
+    /// The input string is not exactly one valid JSON value.
+    #[error("parse error: {0}")]
+    Parse(#[from] serde_json::Error),
+
+    /// A filter result cannot be represented as a JSON value.
+    #[error("output conversion error: {0}")]
+    Output(#[source] serde_json::Error),
+
+    /// The filter program could not be loaded or compiled.
+    #[error("compilation error: {0:?}")]
+    Compile(Vec<String>),
+
+    /// A single-result method evaluated a filter that produced no values.
+    #[error("no output")]
+    NoOutput,
+
+    /// Evaluation failed with an owned, backend-independent diagnostic.
+    #[error("execution error: {0}")]
+    Execute(String),
+}

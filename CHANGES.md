@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - Require Rust 1.97 or later
+- Store execution error messages independently of backend error types
 
 ## 0.1.1 - 2026-10-04
 ### Added

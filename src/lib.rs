@@ -64,6 +64,11 @@
 extern crate alloc;
 
 #[cfg(feature = "jaq")]
+mod error;
+#[cfg(feature = "jaq")]
+pub use error::JsonFilterError;
+
+#[cfg(feature = "jaq")]
 mod jaq;
 #[cfg(feature = "jaq")]
 pub use jaq::*;
