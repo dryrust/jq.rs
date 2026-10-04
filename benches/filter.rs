@@ -2,7 +2,7 @@
 
 use core::hint::black_box;
 use jq::JsonFilter;
-use serde_json::json;
+use serde_json::{Value, json};
 use std::time::Instant;
 
 fn measure<T>(name: &str, iterations: u32, mut run: impl FnMut() -> T) {
@@ -52,4 +52,32 @@ fn main() {
             .filter_json(black_box(input.clone()))
             .unwrap()
     });
+
+    let large = Value::Array(
+        (0..1_024)
+            .map(|id| json!({"id": id, "profile": {"name": "日本語 🦀", "tags": [1, 2, 3]}}))
+            .collect(),
+    );
+    for (size, input) in [("small", input), ("large-nested", large)] {
+        let text = input.to_string();
+        let identity = JsonFilter::default();
+        assert_eq!(identity.filter_json_str(&text).unwrap(), input);
+        measure(
+            &format!("conversion/{size}/clone-value"),
+            iterations,
+            || black_box(&input).clone(),
+        );
+        measure(&format!("conversion/{size}/parse-json"), iterations, || {
+            serde_json::from_str::<Value>(black_box(&text)).unwrap()
+        });
+        measure(&format!("conversion/{size}/to-jaq"), iterations, || {
+            jaq_json::Val::from(black_box(input.clone()))
+        });
+        measure(&format!("identity/{size}/value"), iterations, || {
+            identity.filter_json(black_box(input.clone())).unwrap()
+        });
+        measure(&format!("identity/{size}/string"), iterations, || {
+            identity.filter_json_str(black_box(&text)).unwrap()
+        });
+    }
 }
