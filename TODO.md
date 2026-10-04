@@ -82,14 +82,6 @@ requires no caller code changes wherever possible.
   expressions (`1 +`), unknown functions, and unbound variables; test stable
   diagnostic information rather than upstream debug formatting.
 
-- [ ] Clarify the unimplemented backend feature flags.
-  `Cargo.toml:32-34` advertises `jq`, `libjq`, and `xq` as empty features,
-  while `src/lib.rs:10-13` exports an API only for `jaq`. Selecting one of
-  these flags alone builds a crate with no filtering API. Document `jq` as
-  the planned upstream subprocess backend and mark unimplemented flags as
-  reserved. Test each implemented flag with the same public filtering API.
-  Also explain the currently empty `unstable` flag.
-
 - [ ] Document and test the backend numeric compatibility contract.
   Record numeric differences: `nan`, `infinite`, and `1 / 0` currently
   become JSON null, while literals beyond u64 may lose precision unless a

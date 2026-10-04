@@ -6,6 +6,18 @@
 //! and is declared `no_std`, but the current jaq dependency graph still requires
 //! a target with the standard library. The `std` feature is enabled by default.
 //!
+//! # Features
+//!
+//! - `all`: enables every implemented backend, currently just `jaq`.
+//! - `jaq`: enables the jaq implementation and public filtering API.
+//! - `std`: enables standard-library support in dependencies.
+//! - `jq`: reserved for an upstream jq subprocess backend requiring `std`.
+//! - `libjq`, `xq`: reserved for unimplemented backends.
+//! - `unstable`: reserved for experimental APIs; currently has no effect.
+//!
+//! Defaults enable `all` and `std`. Reserved flags do not provide a filtering
+//! API on their own; builds without `jaq` currently export no filter types.
+//!
 //! ```
 //! # #[cfg(feature = "jaq")] {
 //! use jq::JsonFilter;

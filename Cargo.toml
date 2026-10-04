@@ -26,10 +26,13 @@ publish = true
 default = ["all", "std"]
 all = ["jaq"]
 std = ["jaq-core?/std", "jaq-std?/std", "serde_json/std", "thiserror/std"]
+# Reserved for experimental APIs; currently has no effect.
 unstable = []
 
 jaq = ["dep:jaq-core", "dep:jaq-json", "dep:jaq-std"]
+# Reserved for the planned upstream jq subprocess backend (will require std).
 jq = []
+# Reserved, unimplemented backend flags.
 libjq = []
 xq = []
 
