@@ -30,16 +30,19 @@ publish = true
 [features]
 default = ["all", "std"]
 all = ["jaq"]
-std = ["jaq-core?/std", "jaq-std?/std", "serde_json/std", "thiserror/std"]
+std = ["jaq-core?/std", "jaq-std?/std", "serde_json?/std", "thiserror?/std"]
 # Reserved for experimental APIs; currently has no effect.
 unstable = []
 
-jaq = ["dep:jaq-core", "dep:jaq-json", "dep:jaq-std"]
+jaq = ["_api", "dep:jaq-core", "dep:jaq-json", "dep:jaq-std"]
 # Reserved for the planned upstream jq subprocess backend (will require std).
 jq = []
 # Reserved, unimplemented backend flags.
 libjq = []
 xq = []
+
+# Shared filtering API dependencies; enabled by implemented backends.
+_api = ["dep:serde_json", "dep:thiserror"]
 
 [dependencies]
 jaq-core = { version = "2.2", default-features = false, optional = true }
@@ -48,5 +51,5 @@ jaq-json = { version = "1.1", default-features = false, features = [
     "serde_json",
 ], optional = true }
 jaq-std = { version = "2.1", default-features = false, optional = true }
-serde_json = { version = "1", default-features = false, features = ["alloc"] }
-thiserror = { version = "2", default-features = false }
+serde_json = { version = "1", default-features = false, features = ["alloc"], optional = true }
+thiserror = { version = "2", default-features = false, optional = true }

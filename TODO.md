@@ -69,13 +69,6 @@ requires no caller code changes wherever possible.
   exhaustion and input-error semantics. Test consumption order and keep
   the current single-JSON-value string methods' contract intact.
 
-- [ ] Remove unused dependency work in backend-free builds.
-  Gate backend-only
-  dependencies on their owning features; attach shared JSON/error dependencies
-  to the common public API rather than specifically to `jaq`. Preserve weak
-  std feature forwarding for optional dependencies and verify the
-  no-default-features dependency graph after the change.
-
 - [ ] Benchmark compilation, conversion, and filter reuse before optimizing.
   Add small benchmarks around `src/jaq.rs`: compile once versus per call,
   string versus `Value` input, first-result versus full collection, and
