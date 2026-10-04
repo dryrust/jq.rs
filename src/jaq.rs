@@ -96,17 +96,22 @@ impl Program {
         bindings: &[(String, Value)],
         visitor: impl FnMut(Value) -> ControlFlow<B>,
     ) -> Result<ControlFlow<B>, JsonFilterError> {
-        self.visit_with_inputs(input, bindings, core::iter::empty(), visitor)
+        self.visit_with_inputs(input, bindings, None::<core::iter::Empty<_>>, visitor)
     }
 
     pub(crate) fn visit_with_inputs<B>(
         &self,
         input: Value,
         bindings: &[(String, Value)],
-        auxiliary: impl Iterator<Item = Result<Value, String>>,
+        auxiliary: Option<impl Iterator<Item = Result<Value, String>>>,
         mut visitor: impl FnMut(Value) -> ControlFlow<B>,
     ) -> Result<ControlFlow<B>, JsonFilterError> {
-        let inputs = RcIter::new(auxiliary.map(|value| value.map(Val::from)));
+        let inputs = RcIter::new(
+            auxiliary
+                .into_iter()
+                .flatten()
+                .map(|value| value.map(Val::from)),
+        );
         let values = bindings.iter().map(|(_, value)| Val::from(value.clone()));
         for output in self
             .filter
@@ -157,7 +162,7 @@ mod tests {
         let program = Program::compile("[., input, inputs]", &[])?;
         let auxiliary = [Ok(json!(1)), Ok(json!(2))].into_iter();
         assert_eq!(
-            program.visit_with_inputs(json!(0), &[], auxiliary, ControlFlow::Break)?,
+            program.visit_with_inputs(json!(0), &[], Some(auxiliary), ControlFlow::Break)?,
             ControlFlow::Break(json!([0, 1, 2]))
         );
         Ok(())
@@ -170,7 +175,7 @@ mod tests {
             program.visit_with_inputs(
                 json!(null),
                 &[],
-                [Err(String::from("read failed"))].into_iter(),
+                Some([Err(String::from("read failed"))].into_iter()),
                 ControlFlow::Break
             )?,
             ControlFlow::Break(json!("read failed"))
@@ -182,10 +187,11 @@ mod tests {
         ));
         let program = Program::compile("inputs", &[])?;
         let mut seen = vec![];
-        let status = program.visit_with_inputs(json!(null), &[], core::iter::empty(), |value| {
-            seen.push(value);
-            ControlFlow::<()>::Continue(())
-        })?;
+        let status =
+            program.visit_with_inputs(json!(null), &[], Some(core::iter::empty()), |value| {
+                seen.push(value);
+                ControlFlow::<()>::Continue(())
+            })?;
         assert_eq!(status, ControlFlow::Continue(()));
         assert!(seen.is_empty());
         Ok(())

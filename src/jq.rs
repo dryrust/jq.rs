@@ -93,6 +93,16 @@ impl Program {
         &self,
         input: Value,
         bindings: &[(String, Value)],
+        visitor: impl FnMut(Value) -> ControlFlow<B>,
+    ) -> Result<ControlFlow<B>, JsonFilterError> {
+        self.visit_with_inputs(input, bindings, None::<core::iter::Empty<_>>, visitor)
+    }
+
+    pub(crate) fn visit_with_inputs<B>(
+        &self,
+        input: Value,
+        bindings: &[(String, Value)],
+        auxiliary: Option<impl Iterator<Item = Result<Value, String>> + Send>,
         mut visitor: impl FnMut(Value) -> ControlFlow<B>,
     ) -> Result<ControlFlow<B>, JsonFilterError> {
         let input = if bindings.is_empty() {
@@ -103,9 +113,20 @@ impl Program {
                 "bindings": bindings.iter().map(|(_, value)| value).collect::<alloc::vec::Vec<_>>()
             })
         };
-        let child = Command::new("jq")
-            .args(["-c", "-M", "--unbuffered", "--"])
-            .arg(&self.source)
+        let mut command = Command::new("jq");
+        command.args(["-c", "-M", "--unbuffered"]);
+        if auxiliary.is_some() {
+            // Evaluate the main input exactly once. Tagged records carry either
+            // an auxiliary JSON value or a catchable input error, without
+            // confusing user arrays/objects with transport metadata.
+            command.args(["-n", "--"]).arg(format!(
+                "{AUXILIARY_PRELUDE}\n__jqrs_raw_input |\n{}",
+                self.source
+            ));
+        } else {
+            command.arg("--").arg(&self.source);
+        }
+        let child = command
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
@@ -124,8 +145,15 @@ impl Program {
             let mut stderr = child.child.stderr.take().expect("piped stderr");
             // Write and drain concurrently to avoid pipe-capacity deadlocks.
             let writer = scope.spawn(move || {
-                serde_json::to_writer(&mut stdin, &input).map_err(io_error)?;
-                stdin.write_all(b"\n").map_err(io_error)
+                write_record(&mut stdin, &input)?;
+                for item in auxiliary.into_iter().flatten() {
+                    let record = match item {
+                        Ok(value) => serde_json::json!([true, value]),
+                        Err(message) => serde_json::json!([false, message]),
+                    };
+                    write_record(&mut stdin, &record)?;
+                }
+                Ok::<_, std::io::Error>(())
             });
             let errors = scope.spawn(move || {
                 let mut bytes = vec![];
@@ -156,10 +184,33 @@ impl Program {
                     String::from_utf8_lossy(&stderr).trim()
                 )));
             }
-            written?;
+            // A successful filter need not consume the entire auxiliary stream.
+            if let Err(error) = written
+                && error.kind() != std::io::ErrorKind::BrokenPipe
+            {
+                return Err(io_error(error));
+            }
             Ok(ControlFlow::Continue(()))
         })
     }
+}
+
+const AUXILIARY_PRELUDE: &str = r#"
+def __jqrs_raw_input: input;
+def __jqrs_raw_inputs: inputs;
+def __jqrs_decode: if .[0] then .[1] else error(.[1]) end;
+def input: __jqrs_raw_input | __jqrs_decode;
+def inputs: __jqrs_raw_inputs | __jqrs_decode;
+"#;
+
+fn write_record(writer: &mut impl Write, value: &Value) -> Result<(), std::io::Error> {
+    serde_json::to_writer(&mut *writer, value).map_err(|error| {
+        std::io::Error::new(
+            error.io_error_kind().unwrap_or(std::io::ErrorKind::Other),
+            error,
+        )
+    })?;
+    writer.write_all(b"\n")
 }
 
 struct ChildGuard {
@@ -182,4 +233,44 @@ fn io_error(error: impl core::fmt::Display) -> JsonFilterError {
 
 fn worker_error() -> JsonFilterError {
     JsonFilterError::Execute("jq pipe worker panicked".into())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::json;
+
+    #[test]
+    fn auxiliary_records_preserve_values_and_errors() -> Result<(), JsonFilterError> {
+        let program = Program::compile("[., input, (try input catch .), inputs]", &[])?;
+        let auxiliary = [
+            Ok(json!([false, "literal"])),
+            Err(String::from("read failed")),
+            Ok(json!({"value": true})),
+        ]
+        .into_iter();
+        assert_eq!(
+            program.visit_with_inputs(json!(0), &[], Some(auxiliary), ControlFlow::Break)?,
+            ControlFlow::Break(json!([0, [false, "literal"], "read failed", {"value": true}]))
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn unused_auxiliary_values_do_not_become_main_inputs() -> Result<(), JsonFilterError> {
+        let program = Program::compile(".", &[])?;
+        let mut values = vec![];
+        let status = program.visit_with_inputs(
+            json!(0),
+            &[],
+            Some(core::iter::repeat_with(|| Ok(json!("x".repeat(64 * 1024))))),
+            |value| {
+                values.push(value);
+                ControlFlow::<()>::Continue(())
+            },
+        )?;
+        assert_eq!(status, ControlFlow::Continue(()));
+        assert_eq!(values, [json!(0)]);
+        Ok(())
+    }
 }
