@@ -97,7 +97,7 @@ impl JsonFilter {
         Ok(outputs
             .next()
             .ok_or_else(|| JsonFilterError::NoOutput)?
-            .map_err(|e| JsonFilterError::Execute(e))?
+            .map_err(JsonFilterError::Execute)?
             .into())
     }
 

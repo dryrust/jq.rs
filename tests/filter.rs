@@ -18,7 +18,10 @@ fn compiled_and_cloned_filters_can_be_reused() -> Result<(), JsonFilterError> {
             assert_eq!(filter.filter_json(input.clone())?, json!(name));
             assert_eq!(filter.filter_json_str(input.to_string())?, json!(name));
             assert_eq!(filter.filter_json_all(input.clone())?, [json!(name)]);
-            assert_eq!(filter.filter_json_str_all(input.to_string())?, [json!(name)]);
+            assert_eq!(
+                filter.filter_json_str_all(input.to_string())?,
+                [json!(name)]
+            );
         }
     }
     Ok(())
@@ -36,7 +39,10 @@ fn default_filter_is_identity() -> Result<(), JsonFilterError> {
     ] {
         assert_eq!(filter.filter_json(input.clone())?, input);
         assert_eq!(filter.filter_json_str(input.to_string())?, input);
-        assert_eq!(filter.filter_json_all(input.clone())?, [input.clone()]);
+        assert_eq!(
+            filter.filter_json_all(input.clone())?,
+            core::slice::from_ref(&input)
+        );
         assert_eq!(filter.filter_json_str_all(input.to_string())?, [input]);
     }
     Ok(())
@@ -110,7 +116,10 @@ fn rejects_invalid_json_and_multiple_inputs() -> Result<(), JsonFilterError> {
 #[test]
 fn single_result_methods_report_immediate_execution_errors() -> Result<(), JsonFilterError> {
     let filter: JsonFilter = r#"error("failure")"#.parse()?;
-    for result in [filter.filter_json(json!(null)), filter.filter_json_str("null")] {
+    for result in [
+        filter.filter_json(json!(null)),
+        filter.filter_json_str("null"),
+    ] {
         let error = result.unwrap_err();
         assert!(matches!(error, JsonFilterError::Execute(_)));
         assert!(error.to_string().contains("failure"));

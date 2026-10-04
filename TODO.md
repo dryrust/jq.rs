@@ -97,14 +97,6 @@ requires no caller code changes wherever possible.
   Exercise serde_json precision/order feature combinations in a consumer
   fixture so downstream feature unification remains covered.
 
-- [ ] Clear the existing Clippy failure and add static-check gates.
-  `cargo clippy --workspace --all-targets --all-features -- -D warnings`
-  currently fails on the redundant closure at `src/jaq.rs:90`; use the
-  `JsonFilterError::Execute` constructor directly. Add this check,
-  `cargo fmt --all -- --check`, and warnings-as-errors rustdoc generation to
-  CI. Enable missing-public-documentation checks after filling the rustdoc
-  gaps above.
-
 ## P3: Focused extensions and maintenance
 
 - [ ] Offer incremental output consumption.
