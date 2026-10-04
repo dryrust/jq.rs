@@ -15,7 +15,44 @@ fn compiles_without_evaluating_the_program() -> Result<(), JsonFilterError> {
         "[".parse::<JsonFilter>(),
         Err(JsonFilterError::Compile(_))
     ));
+    assert!(matches!(
+        "), error(\"validation executed\"), (".parse::<JsonFilter>(),
+        Err(JsonFilterError::Compile(_))
+    ));
     Ok(())
+}
+
+#[test]
+fn missing_executable_reports_a_loading_diagnostic() {
+    let output = std::process::Command::new(std::env::current_exe().unwrap())
+        .args([
+            "--exact",
+            "missing_executable_child",
+            "--ignored",
+            "--nocapture",
+        ])
+        .env("PATH", "")
+        .output()
+        .unwrap();
+    assert!(output.status.success(), "{output:?}");
+    assert!(String::from_utf8_lossy(&output.stdout).contains("missing jq handled"));
+}
+
+#[test]
+#[ignore = "invoked in a subprocess with an empty PATH"]
+fn missing_executable_child() {
+    let Err(JsonFilterError::Compile(diagnostics)) = ".".parse::<JsonFilter>() else {
+        panic!("expected a compilation loading failure");
+    };
+    assert_eq!(diagnostics.len(), 1);
+    assert_eq!(diagnostics[0].phase, jq::CompilationPhase::Load);
+    assert!(diagnostics[0].message.contains("cannot run jq"));
+    assert!(diagnostics[0].span.is_none());
+    assert!(matches!(
+        JsonFilter::default().filter_json(json!(null)),
+        Err(JsonFilterError::Execute(_))
+    ));
+    println!("missing jq handled");
 }
 
 #[test]

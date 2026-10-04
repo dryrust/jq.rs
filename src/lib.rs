@@ -47,7 +47,7 @@
 //! # Backend compatibility
 //!
 //! The default backend is jaq, whose language behavior can differ from upstream
-//! jq. External module loading is unsupported. Named JSON variables can be
+//! jq. jaq rejects external module and data imports. Named JSON variables can be
 //! supplied with `JsonFilter::with_bindings`. Auxiliary input is empty:
 //! `inputs` produces no values and `input` encounters exhaustion. Backend
 //! selection is intended to remain an implementation detail of the public API.

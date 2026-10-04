@@ -1,7 +1,7 @@
 // This is free and unencumbered software released into the public domain.
 
 use crate::{CompilationDiagnostic, CompilationPhase, JsonFilterError};
-use alloc::{format, string::String, vec};
+use alloc::{format, string::String, vec, vec::Vec};
 use core::ops::ControlFlow;
 use serde_json::Value;
 use std::{
@@ -34,13 +34,13 @@ impl Program {
             for (index, (name, _)) in bindings.iter().enumerate() {
                 prefix.push_str(&format!(".bindings[{index}] as ${name} | "));
             }
-            format!("{prefix}.input | (\n{source}\n)")
+            format!("{prefix}.input |\n{source}")
         };
-        // Compile without evaluating the user expression. Newlines also keep a
-        // trailing source comment from swallowing the closing parenthesis.
+        // jq compiles before reading stdin. EOF validates the actual program
+        // without evaluation or a wrapper that can change its syntax.
         let output = Command::new("jq")
-            .args(["-n", "-c", "-M", "--"])
-            .arg(format!("empty | (\n{source}\n)"))
+            .args(["-c", "-M", "--"])
+            .arg(&source)
             .stdin(Stdio::null())
             .output()
             .map_err(|error| {
@@ -51,18 +51,41 @@ impl Program {
                 }])
             })?;
         if !output.status.success() {
-            return Err(JsonFilterError::Compile(vec![CompilationDiagnostic {
-                phase: CompilationPhase::Compile,
-                span: None,
-                message: format!(
-                    "jq {}: {}",
-                    output.status,
-                    String::from_utf8_lossy(&output.stderr).trim()
-                ),
-            }]));
+            return Err(JsonFilterError::Compile(compile_diagnostics(&output)));
         }
         Ok(Self { source })
     }
+}
+
+fn compile_diagnostics(output: &std::process::Output) -> Vec<CompilationDiagnostic> {
+    let phase = if output.status.code() == Some(3) {
+        CompilationPhase::Compile
+    } else {
+        CompilationPhase::Load
+    };
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    let mut diagnostics: Vec<_> = stderr
+        .lines()
+        .filter_map(|line| {
+            let message = line.strip_prefix("jq: error: ")?;
+            // Source excerpts and wrapper-relative line numbers vary with the jq
+            // version. Keep its explanatory text, without claiming a source span.
+            let message = message.split(" at <top-level>").next()?.trim();
+            Some(CompilationDiagnostic {
+                phase,
+                message: message.into(),
+                span: None,
+            })
+        })
+        .collect();
+    if diagnostics.is_empty() {
+        diagnostics.push(CompilationDiagnostic {
+            phase,
+            message: format!("jq compiler failed: {}", output.status),
+            span: None,
+        });
+    }
+    diagnostics
 }
 
 impl Program {

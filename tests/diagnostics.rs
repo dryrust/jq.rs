@@ -4,11 +4,26 @@
 
 use jq::{CompilationDiagnostic, CompilationPhase, JsonFilterError};
 
-#[cfg(feature = "jaq")]
 fn diagnostics(source: &str) -> Vec<CompilationDiagnostic> {
     match source.parse::<jq::JsonFilter>() {
         Err(JsonFilterError::Compile(diagnostics)) => diagnostics,
         _ => panic!("expected a compilation failure"),
+    }
+}
+
+#[cfg(all(feature = "jq", not(feature = "jaq")))]
+#[test]
+fn upstream_diagnostics_omit_source_excerpts() {
+    for source in ["[", "1 +", "unknown", "$unbound"] {
+        let diagnostics = diagnostics(&format!("{source} # PRIVATE_SOURCE_MARKER"));
+        assert!(!diagnostics.is_empty());
+        for diagnostic in diagnostics {
+            assert_eq!(diagnostic.phase, CompilationPhase::Compile);
+            assert!(diagnostic.span.is_none());
+            assert!(!diagnostic.message.is_empty());
+            assert!(!diagnostic.message.contains("PRIVATE_SOURCE_MARKER"));
+            assert!(!diagnostic.message.contains("<top-level>"));
+        }
     }
 }
 

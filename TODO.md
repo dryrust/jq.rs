@@ -35,10 +35,6 @@ requires no caller code changes wherever possible.
 
 ## P2: Build, API, and regression guarantees
 
-- [ ] Replace raw compilation debug dumps with useful diagnostics.
-  Normalize upstream jq compilation stderr without source excerpts; distinguish
-  compiler launch failures from program errors and test both paths.
-
 - [ ] Add bare-metal backend coverage to CI.
   After fixing the transitive std dependency, add the bare-metal backend check
   above. Add 32-bit runtime arithmetic regressions when fixing overflow;
