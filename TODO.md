@@ -14,4 +14,3 @@ requires no caller code changes wherever possible.
 
 - [ ] Define JSON-output compatibility for jaq-json 2.x.
   Test rejection of binary strings, invalid UTF-8, and non-string object keys.
-  Cover computed big integers with consumer arbitrary precision enabled.

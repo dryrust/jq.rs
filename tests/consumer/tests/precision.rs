@@ -41,3 +41,45 @@ fn consumer_precision_preserves_input_values() -> Result<(), JsonFilterError> {
     assert_eq!(filter.filter_json_str_all(input)?, [expected]);
     Ok(())
 }
+
+#[test]
+fn computed_big_integers_remain_exact() -> Result<(), JsonFilterError> {
+    for (source, decimal) in [
+        ("18446744073709551615 + 2", "18446744073709551617"),
+        ("-9223372036854775808 - 1", "-9223372036854775809"),
+        (
+            "18446744073709551615 * 18446744073709551615",
+            "340282366920938463426481119284349108225",
+        ),
+    ] {
+        let expected: Value = serde_json::from_str(decimal)?;
+        let filter: JsonFilter = source.parse()?;
+        assert_eq!(filter.filter_json(Value::Null)?.to_string(), decimal);
+        assert_eq!(
+            filter.filter_json_all(Value::Null)?,
+            core::slice::from_ref(&expected)
+        );
+        let nested: JsonFilter = format!("{{computed: [({source})]}}").parse()?;
+        assert_eq!(
+            nested.filter_json_str("null")?,
+            json!({"computed": [expected]})
+        );
+    }
+    Ok(())
+}
+
+#[test]
+fn big_integer_inputs_and_bindings_retain_unit_differences() -> Result<(), JsonFilterError> {
+    let large: Value = serde_json::from_str("18446744073709551617")?;
+    let expected: Value = serde_json::from_str("18446744073709551618")?;
+    let filter: JsonFilter = ". + 1".parse()?;
+    assert_eq!(filter.filter_json(large.clone())?, expected);
+    let bound = JsonFilter::with_bindings("$large + 1", [("large", large.clone())])?;
+    assert_eq!(bound.filter_json(Value::Null)?, expected);
+    let streamed: JsonFilter = "input + 1".parse()?;
+    assert_eq!(
+        streamed.filter_json_with_inputs(Value::Null, [Ok(large)])?,
+        expected
+    );
+    Ok(())
+}

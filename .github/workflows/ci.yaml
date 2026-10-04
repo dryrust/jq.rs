@@ -187,3 +187,8 @@ jobs:
         run: >-
           cargo test --locked -p jq-consumer-tests --no-default-features
           --features ${{ matrix.features }}
+      - name: Test release precision
+        if: contains(matrix.features, 'arbitrary_precision')
+        run: >-
+          cargo test --locked -p jq-consumer-tests --no-default-features
+          --features ${{ matrix.features }} --release --test precision
