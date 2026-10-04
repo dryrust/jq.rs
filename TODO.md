@@ -89,13 +89,9 @@ requires no caller code changes wherever possible.
   expressions (`1 +`), unknown functions, and unbound variables; test stable
   diagnostic information rather than upstream debug formatting.
 
-- [ ] Cover filter construction and reuse in integration tests.
-  Add explicit regressions for `Clone` and reuse across distinct inputs.
-  Reuse a compiled filter
-  across distinct inputs, including a realistic nested selection pipeline,
-  and Unicode strings. Exercise
-  malformed JSON and immediate execution errors in the single-result APIs
-  as well as the collection APIs.
+- [ ] Cover single-result failures in integration tests.
+  Exercise malformed JSON and immediate execution errors in the single-result
+  APIs as well as the collection APIs.
 
 - [ ] Clarify the unimplemented backend feature flags.
   `Cargo.toml:32-34` advertises `jq`, `libjq`, and `xq` as empty features,

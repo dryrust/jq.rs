@@ -6,6 +6,25 @@ use jq::{JsonFilter, JsonFilterError};
 use serde_json::json;
 
 #[test]
+fn compiled_and_cloned_filters_can_be_reused() -> Result<(), JsonFilterError> {
+    let original: JsonFilter = ".users[] | select(.active) | .profile.name".parse()?;
+    let cloned = original.clone();
+    for name in ["Zoë", "日本語 🦀", "مرحبا"] {
+        let input = json!({"users": [
+            {"active": false, "profile": {"name": "excluded"}},
+            {"active": true, "profile": {"name": name}}
+        ]});
+        for filter in [&original, &cloned] {
+            assert_eq!(filter.filter_json(input.clone())?, json!(name));
+            assert_eq!(filter.filter_json_str(input.to_string())?, json!(name));
+            assert_eq!(filter.filter_json_all(input.clone())?, [json!(name)]);
+            assert_eq!(filter.filter_json_str_all(input.to_string())?, [json!(name)]);
+        }
+    }
+    Ok(())
+}
+
+#[test]
 fn default_filter_is_identity() -> Result<(), JsonFilterError> {
     let filter = JsonFilter::default();
     for input in [
