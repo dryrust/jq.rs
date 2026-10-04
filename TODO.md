@@ -48,12 +48,10 @@ requires no caller code changes wherever possible.
   expressions (`1 +`), unknown functions, and unbound variables; test stable
   diagnostic information rather than upstream debug formatting.
 
-- [ ] Add target and consumer feature matrices to CI.
+- [ ] Add target coverage to CI.
   After fixing the transitive std dependency, add the bare-metal backend check
-  above; include
-  a 32-bit target such as wasm32 to catch target-sensitive assumptions.
-  Exercise serde_json precision/order feature combinations in a consumer
-  fixture so downstream feature unification remains covered.
+  above; include a 32-bit target such as wasm32 to catch target-sensitive
+  assumptions.
 
 ## P3: Focused extensions and maintenance
 

@@ -72,3 +72,25 @@ jobs:
         run: cargo build --locked --examples
       - name: Run tests
         run: cargo test --locked
+  consumer-features:
+    name: Consumer (${{ matrix.rust }}, ${{ matrix.features }})
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        rust: ["1.97.0", stable]
+        features:
+          - jaq
+          - jaq,arbitrary_precision
+          - jaq,preserve_order
+          - jaq,arbitrary_precision,preserve_order
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ matrix.rust }}
+      - name: Test consumer feature unification
+        run: >-
+          cargo test --locked -p jq-consumer-tests --no-default-features
+          --features ${{ matrix.features }}
