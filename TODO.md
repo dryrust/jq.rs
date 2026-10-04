@@ -15,9 +15,3 @@ requires no caller code changes wherever possible.
 - [ ] Define JSON-output compatibility for jaq-json 2.x.
   Test rejection of binary strings, invalid UTF-8, and non-string object keys.
   Cover computed big integers with consumer arbitrary precision enabled.
-
-## P2: Build, API, and regression guarantees
-
-- [ ] Add 32-bit runtime arithmetic coverage to CI.
-  Execute the arithmetic regressions in debug and release on a 32-bit target;
-  compile checks alone cannot detect differing execution behavior.

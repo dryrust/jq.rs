@@ -12,6 +12,35 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
+  arithmetic:
+    name: Arithmetic (${{ matrix.target }}, ${{ matrix.profile.name }})
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        target: [x86_64-unknown-linux-gnu, wasm32-wasip1]
+        profile:
+          - name: debug
+            args: ""
+          - name: release
+            args: --release
+    env:
+      CARGO_TARGET_WASM32_WASIP1_RUNNER: node .github/scripts/wasi-runner.mjs
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+      - name: Install WASI runtime
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Run arithmetic regressions
+        run: >-
+          cargo test --locked --no-default-features --features jaq
+          --test arithmetic --target ${{ matrix.target }}
+          ${{ matrix.profile.args }} -- --test-threads=1
   bare-metal:
     name: Bare-metal consumer (${{ matrix.rust }})
     runs-on: ubuntu-latest
