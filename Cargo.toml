@@ -1,5 +1,10 @@
 # See: https://doc.rust-lang.org/cargo/reference/manifest.html
 
+[workspace]
+members = ["tests/consumer"]
+default-members = ["."]
+resolver = "3"
+
 [package]
 name = "jq"
 version = "0.1.1"

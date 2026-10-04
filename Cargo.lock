@@ -131,6 +131,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "jq-consumer-tests"
+version = "0.0.0"
+dependencies = [
+ "jq",
+ "serde_json",
+]
+
+[[package]]
 name = "libm"
 version = "0.2.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"

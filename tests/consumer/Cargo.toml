@@ -1,0 +1,17 @@
+[package]
+name = "jq-consumer-tests"
+version = "0.0.0"
+edition = "2024"
+rust-version = "1.97"
+publish = false
+
+[features]
+default = ["all", "std"]
+all = ["jaq"]
+std = ["jq/std", "serde_json/std"]
+jaq = ["jq/jaq"]
+arbitrary_precision = ["serde_json/arbitrary_precision"]
+
+[dependencies]
+jq = { path = "../..", default-features = false }
+serde_json = { version = "1", default-features = false, features = ["alloc"] }

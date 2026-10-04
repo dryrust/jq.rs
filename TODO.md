@@ -12,10 +12,6 @@ requires no caller code changes wherever possible.
 
 ## P1: Correctness and portability
 
-- [ ] Verify checked output conversion with consumer-enabled arbitrary precision.
-  Add a consumer fixture enabling `serde_json/arbitrary_precision` and cover
-  nested values and both result APIs, since it changes the representable range.
-
 - [ ] Eliminate profile-dependent integer overflow in the backend.
   Through `src/jaq.rs` evaluation, `9223372036854775807 + 1` panics in debug
   builds but returns `-9223372036854775808` in release builds. Fix or upgrade
