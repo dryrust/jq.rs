@@ -13,7 +13,7 @@ requires no caller code changes wherever possible.
 ## P1: Correctness and portability
 
 - [ ] Eliminate profile-dependent integer overflow in the backend.
-  Audit addition, subtraction, multiplication, negation, remainder, and
+  Audit multiplication, negation, remainder, and
   absolute-value boundaries in jaq-json 2.x. Add regressions in both profiles
   and account for machine-sized integers on 32-bit targets. Check `length`
   on the minimum integer: upstream still calls `isize::abs` directly.
