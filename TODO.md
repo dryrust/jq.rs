@@ -46,11 +46,6 @@ requires no caller code changes wherever possible.
 
 ## P3: Focused extensions and maintenance
 
-- [ ] Support externally supplied variable bindings.
-  Add rebinding to reuse a compiled program with different variable values.
-  Validate the complete name set, preserve declaration order, and test missing
-  and extra names, repeated execution, and independent clones on both backends.
-
 - [ ] Accept an explicit auxiliary input stream.
   `src/jaq.rs:85,120` always supplies an empty `RcIter`, so `input` and
   `inputs` yield nothing even when a main input value is present. Add an

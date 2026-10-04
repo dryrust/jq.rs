@@ -5,7 +5,12 @@ use crate::JsonFilterError;
 use crate::jaq::Program;
 #[cfg(all(feature = "jq", not(feature = "jaq")))]
 use crate::jq::Program;
-use alloc::{collections::BTreeSet, format, string::String, vec::Vec};
+use alloc::{
+    collections::{BTreeMap, BTreeSet},
+    format,
+    string::String,
+    vec::Vec,
+};
 use core::{ops::ControlFlow, str::FromStr};
 use serde_json::Value;
 
@@ -59,6 +64,55 @@ impl JsonFilter {
         validate_bindings(&bindings)?;
         let program = Program::compile(source, &bindings)?;
         Ok(Self { program, bindings })
+    }
+
+    /// Replaces all bound values without recompiling or revalidating the source.
+    ///
+    /// Supply exactly the names passed to [`Self::with_bindings`], in any order.
+    /// Missing, extra, invalid, or duplicate names return a binding error and
+    /// leave all previous values intact. Clones keep their own binding values.
+    /// This method does not change the subprocess backend's per-call compilation.
+    ///
+    /// ```
+    /// use jq::JsonFilter;
+    /// use serde_json::json;
+    ///
+    /// let mut filter = JsonFilter::with_bindings(". + $offset", [("offset", json!(1))])?;
+    /// assert_eq!(filter.filter_json(json!(2))?, json!(3));
+    /// filter.set_bindings([("offset", json!(10))])?;
+    /// assert_eq!(filter.filter_json(json!(2))?, json!(12));
+    /// # Ok::<(), jq::JsonFilterError>(())
+    /// ```
+    pub fn set_bindings<N: AsRef<str>>(
+        &mut self,
+        bindings: impl IntoIterator<Item = (N, Value)>,
+    ) -> Result<(), JsonFilterError> {
+        let bindings: Vec<_> = bindings
+            .into_iter()
+            .map(|(name, value)| (String::from(name.as_ref()), value))
+            .collect();
+        validate_bindings(&bindings)?;
+        if bindings.len() != self.bindings.len() {
+            return Err(JsonFilterError::Bindings(format!(
+                "expected {} bindings, received {}",
+                self.bindings.len(),
+                bindings.len()
+            )));
+        }
+        let mut values: BTreeMap<_, _> = bindings.into_iter().collect();
+        for (name, _) in &self.bindings {
+            if !values.contains_key(name) {
+                return Err(JsonFilterError::Bindings(format!(
+                    "missing variable: {name}"
+                )));
+            }
+        }
+        // Preserve the declaration order used by the compiled program. Validate
+        // the whole name set before changing any values, so failure is atomic.
+        for (name, value) in &mut self.bindings {
+            *value = values.remove(name).expect("validated binding name");
+        }
+        Ok(())
     }
 
     /// Parses one JSON value and returns only its first filter result.

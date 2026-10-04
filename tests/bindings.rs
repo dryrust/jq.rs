@@ -59,3 +59,46 @@ fn bindings_support_large_values_and_local_shadowing() -> Result<(), JsonFilterE
     assert_eq!(filter.filter_json(json!(null))?, json!(1));
     Ok(())
 }
+
+#[test]
+fn rebinding_preserves_declaration_order_and_clone_independence() -> Result<(), JsonFilterError> {
+    let mut filter = JsonFilter::with_bindings(
+        "[$left, $right, .]",
+        [("left", json!(1)), ("right", json!(2))],
+    )?;
+    let cloned = filter.clone();
+    for left in [json!({"updated": true}), json!("日本語")] {
+        filter.set_bindings([("right", json!(null)), ("left", left.clone())])?;
+        assert_eq!(filter.filter_json(json!(3))?, json!([left, null, 3]));
+        assert_eq!(filter.filter_json_str_all("4")?, [json!([left, null, 4])]);
+        assert_eq!(cloned.filter_json(json!(5))?, json!([1, 2, 5]));
+    }
+    Ok(())
+}
+
+#[test]
+fn failed_rebinding_keeps_all_previous_values() -> Result<(), JsonFilterError> {
+    let mut filter = JsonFilter::with_bindings("[$a, $b]", [("a", json!(1)), ("b", json!(2))])?;
+    for bindings in [
+        vec![],
+        vec![("a", json!(9))],
+        vec![("a", json!(9)), ("unknown", json!(10))],
+        vec![("a", json!(9)), ("a", json!(10))],
+        vec![("a", json!(9)), ("$b", json!(10))],
+        vec![("a", json!(9)), ("b", json!(10)), ("extra", json!(11))],
+    ] {
+        assert!(matches!(
+            filter.set_bindings(bindings),
+            Err(JsonFilterError::Bindings(_))
+        ));
+        assert_eq!(filter.filter_json(json!(null))?, json!([1, 2]));
+    }
+    let mut identity = JsonFilter::default();
+    identity.set_bindings(core::iter::empty::<(&str, serde_json::Value)>())?;
+    assert!(matches!(
+        identity.set_bindings([("new", json!(1))]),
+        Err(JsonFilterError::Bindings(_))
+    ));
+    assert_eq!(identity.filter_json(json!(42))?, json!(42));
+    Ok(())
+}
