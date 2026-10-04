@@ -1,6 +1,39 @@
 // This is free and unencumbered software released into the public domain.
 
-//! This crate implements a `jq` wrapper.
+//! Compile and reuse jq-style filters over JSON values.
+//!
+//! The default `jaq` feature provides the filtering API. The crate uses `alloc`
+//! and is declared `no_std`, but the current jaq dependency graph still requires
+//! a target with the standard library. The `std` feature is enabled by default.
+//!
+//! ```
+//! # #[cfg(feature = "jaq")] {
+//! use jq::JsonFilter;
+//! use serde_json::json;
+//!
+//! let filter: JsonFilter = ".items[] | .name".parse()?;
+//! assert_eq!(
+//!     filter.filter_json_all(json!({"items": [{"name": "Ada"}]}))?,
+//!     [json!("Ada")],
+//! );
+//! assert_eq!(filter.filter_json_str(r#"{"items":[{"name":"Lin"}]}"#)?,
+//!            json!("Lin"));
+//! # }
+//! # Ok::<(), std::boxed::Box<dyn core::error::Error>>(())
+//! ```
+//!
+//! Default filter construction is identity (`.`). Parsing a filter program
+//! reports compilation errors; string-based filtering methods separately
+//! report invalid JSON input. Single-result methods evaluate only the first
+//! result, while collection methods detect later execution errors as well.
+//!
+//! # Backend compatibility
+//!
+//! The current backend is jaq, whose language behavior can differ from upstream
+//! jq. External module loading and externally supplied variable bindings are
+//! unsupported. Auxiliary input is empty: `inputs` produces no values and
+//! `input` encounters exhaustion. Backend selection is intended to remain an
+//! implementation detail of the public filtering API.
 
 #![no_std]
 #![forbid(unsafe_code)]

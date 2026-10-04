@@ -97,12 +97,8 @@ requires no caller code changes wherever possible.
   reserved. Test each implemented flag with the same public filtering API.
   Also explain the currently empty `unstable` flag.
 
-- [ ] Document the public types and backend compatibility contract.
-  Expand the crate-level overview in `src/lib.rs` with a
-  compile/apply/reuse example and feature requirements. Explain default
-  identity behavior and JSON-parse versus program-compilation failures.
-  Record unsupported module loading and external variables, empty auxiliary
-  input, and numeric differences: `nan`, `infinite`, and `1 / 0` currently
+- [ ] Document and test the backend numeric compatibility contract.
+  Record numeric differences: `nan`, `infinite`, and `1 / 0` currently
   become JSON null, while literals beyond u64 may lose precision unless a
   consumer enables `serde_json/arbitrary_precision`. Add focused regressions
   for the chosen numeric contract.
