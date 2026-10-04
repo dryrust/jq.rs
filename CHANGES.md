@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Unreleased
 ### Fixed
 - Return execution errors for `halt` and `halt_error` instead of exiting
+- Report unrepresentable output numbers instead of panicking
 
 ### Changed
 - Require Rust 1.97 or later

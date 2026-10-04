@@ -12,14 +12,9 @@ requires no caller code changes wherever possible.
 
 ## P1: Correctness and portability
 
-- [ ] Make conversion of backend results into JSON fallible.
-  `src/jaq.rs:87-91,123` uses jaq-json's infallible conversion, which internally
-  unwraps a parse result for string-backed numbers. The valid filter `1e400`
-  compiles but panics during output conversion in debug and release builds.
-  `[1e400]` and `"1e400" | fromjson` also reproduce this. Use a shared checked
-  conversion and return a descriptive error for unrepresentable outputs.
-  Cover nested values and both result APIs, including consumer-enabled
-  `serde_json/arbitrary_precision`, which changes the representable range.
+- [ ] Verify checked output conversion with consumer-enabled arbitrary precision.
+  Add a consumer fixture enabling `serde_json/arbitrary_precision` and cover
+  nested values and both result APIs, since it changes the representable range.
 
 - [ ] Eliminate profile-dependent integer overflow in the backend.
   Through `src/jaq.rs` evaluation, `9223372036854775807 + 1` panics in debug

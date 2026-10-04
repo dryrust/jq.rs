@@ -16,6 +16,10 @@ pub enum JsonFilterError {
     #[error("parse error: {0}")]
     Parse(#[from] serde_json::Error),
 
+    /// A filter result cannot be represented as a JSON value.
+    #[error("output conversion error: {0}")]
+    Output(#[source] serde_json::Error),
+
     /// The filter program could not be loaded or compiled.
     #[error("compilation error: {0:?}")]
     Compile(Vec<String>),
@@ -108,11 +112,11 @@ impl JsonFilter {
     pub fn filter_json(&self, input: Value) -> Result<Value, JsonFilterError> {
         let inputs = RcIter::new(core::iter::empty());
         let mut outputs = self.filter.run((Ctx::new([], &inputs), Val::from(input)));
-        Ok(outputs
+        let output = outputs
             .next()
-            .ok_or_else(|| JsonFilterError::NoOutput)?
-            .map_err(JsonFilterError::Execute)?
-            .into())
+            .ok_or(JsonFilterError::NoOutput)?
+            .map_err(JsonFilterError::Execute)?;
+        to_json(&output)
     }
 
     /// Parses one JSON value and collects all filter results in order.
@@ -144,7 +148,28 @@ impl JsonFilter {
         let inputs = RcIter::new(core::iter::empty());
         self.filter
             .run((Ctx::new([], &inputs), Val::from(input)))
-            .map(|output| output.map(Value::from).map_err(JsonFilterError::Execute))
+            .map(|output| to_json(&output.map_err(JsonFilterError::Execute)?))
             .collect()
     }
+}
+
+// Check every nested number rather than using jaq-json's panicking conversion.
+fn to_json(value: &Val) -> Result<Value, JsonFilterError> {
+    Ok(match value {
+        Val::Null => Value::Null,
+        Val::Bool(value) => Value::Bool(*value),
+        Val::Int(value) => Value::Number((*value).into()),
+        Val::Float(value) => {
+            serde_json::Number::from_f64(*value).map_or(Value::Null, Value::Number)
+        }
+        Val::Num(value) => Value::Number(value.parse().map_err(JsonFilterError::Output)?),
+        Val::Str(value) => Value::String((**value).clone()),
+        Val::Arr(values) => Value::Array(values.iter().map(to_json).collect::<Result<_, _>>()?),
+        Val::Obj(values) => Value::Object(
+            values
+                .iter()
+                .map(|(key, value)| Ok(((**key).clone(), to_json(value)?)))
+                .collect::<Result<_, JsonFilterError>>()?,
+        ),
+    })
 }
