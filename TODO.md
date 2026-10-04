@@ -39,9 +39,3 @@ requires no caller code changes wherever possible.
   After fixing the transitive std dependency, add the bare-metal backend check
   above. Add 32-bit runtime arithmetic regressions when fixing overflow;
   compile checks alone cannot detect differing execution behavior.
-
-## P3: Focused extensions and maintenance
-
-- [ ] Accept an explicit auxiliary input stream.
-  Add shared error, exhaustion, unused-input, and early-stop regressions for
-  the auxiliary-input APIs, including consumer feature combinations.

@@ -7,6 +7,8 @@ mod bindings;
 mod diagnostics;
 #[path = "../../filter.rs"]
 mod filter;
+#[path = "../../inputs.rs"]
+mod inputs;
 #[path = "../../numbers.rs"]
 mod numbers;
 #[path = "../../visit.rs"]
