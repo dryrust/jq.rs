@@ -69,10 +69,18 @@ impl FromStr for JsonFilter {
 }
 
 impl JsonFilter {
+    /// Parses one JSON value and returns only its first filter result.
+    ///
+    /// Use [`Self::filter_json_str_all`] to retain all results and detect errors
+    /// after the first result.
     pub fn filter_json_str(&self, input: impl AsRef<str>) -> Result<Value, JsonFilterError> {
         self.filter_json(serde_json::from_str(input.as_ref())?)
     }
 
+    /// Returns only the first filter result, or [`JsonFilterError::NoOutput`].
+    ///
+    /// Later results and errors are not evaluated. Use [`Self::filter_json_all`]
+    /// to retain all results and detect errors after the first result.
     pub fn filter_json(&self, input: Value) -> Result<Value, JsonFilterError> {
         let inputs = RcIter::new(core::iter::empty());
         let mut outputs = self.filter.run((Ctx::new([], &inputs), Val::from(input)));
@@ -81,5 +89,38 @@ impl JsonFilter {
             .ok_or_else(|| JsonFilterError::NoOutput)?
             .map_err(|e| JsonFilterError::Execute(e))?
             .into())
+    }
+
+    /// Parses one JSON value and collects all filter results in order.
+    ///
+    /// Returns an empty vector for filters producing no output. Invalid JSON
+    /// or any execution error returns an error, without partial results.
+    pub fn filter_json_str_all(
+        &self,
+        input: impl AsRef<str>,
+    ) -> Result<Vec<Value>, JsonFilterError> {
+        self.filter_json_all(serde_json::from_str(input.as_ref())?)
+    }
+
+    /// Collects all filter results in order.
+    ///
+    /// Returns an empty vector for filters producing no output. Stops at the
+    /// first execution error, returning it without partial results, even if
+    /// earlier results succeeded. All results are buffered in memory.
+    ///
+    /// ```
+    /// use jq::JsonFilter;
+    /// use serde_json::json;
+    ///
+    /// let filter: JsonFilter = ".[]".parse()?;
+    /// assert_eq!(filter.filter_json_all(json!([1, 2]))?, [json!(1), json!(2)]);
+    /// # Ok::<(), jq::JsonFilterError>(())
+    /// ```
+    pub fn filter_json_all(&self, input: Value) -> Result<Vec<Value>, JsonFilterError> {
+        let inputs = RcIter::new(core::iter::empty());
+        self.filter
+            .run((Ctx::new([], &inputs), Val::from(input)))
+            .map(|output| output.map(Value::from).map_err(JsonFilterError::Execute))
+            .collect()
     }
 }
