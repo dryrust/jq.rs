@@ -61,7 +61,6 @@ requires no caller code changes wherever possible.
   the current single-JSON-value string methods' contract intact.
 
 - [ ] Benchmark compilation, conversion, and filter reuse before optimizing.
-  Add small benchmarks around `src/jaq.rs`: compile once versus per call,
-  string versus `Value` input, first-result versus full collection, and
-  nested/large inputs. Measure standard-library loading and value conversion
-  separately enough to guide caching or allocation reductions with evidence.
+  Extend `benches/filter.rs` with string versus `Value` input, first-result
+  versus full collection, and nested/large inputs. Measure value conversion
+  separately enough to guide allocation reductions with evidence.
