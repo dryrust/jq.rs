@@ -48,8 +48,9 @@
 //!
 //! The default backend is jaq, whose language behavior can differ from upstream
 //! jq. jaq rejects external module and data imports. Named JSON variables can be
-//! supplied with `JsonFilter::with_bindings`. Auxiliary input is empty:
-//! `inputs` produces no values and `input` encounters exhaustion. Backend
+//! supplied with `JsonFilter::with_bindings`. Auxiliary input is empty unless
+//! supplied to a `*_with_inputs` method: `inputs` produces no values and `input`
+//! reports exhaustion when no auxiliary values remain. Backend
 //! selection is intended to remain an implementation detail of the public API.
 //!
 //! # Numbers

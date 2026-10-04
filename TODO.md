@@ -43,6 +43,5 @@ requires no caller code changes wherever possible.
 ## P3: Focused extensions and maintenance
 
 - [ ] Accept an explicit auxiliary input stream.
-  Expose the adapters' fallible input streams through the common API and test
-  consumption order and error semantics on both backends. Document subprocess
-  read-ahead and keep single-JSON-value string methods' parsing contract.
+  Add shared error, exhaustion, unused-input, and early-stop regressions for
+  the auxiliary-input APIs, including consumer feature combinations.

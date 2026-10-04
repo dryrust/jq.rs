@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 ### Added
+- Fallible auxiliary input streams for first, collected, and visited results
 - `JsonFilter::with_bindings` and `set_bindings` for reusable named JSON variables
 - Upstream `jq` subprocess backend, enabled with `--no-default-features --features jq`
 - `JsonFilter::filter_json_visit` for incremental output and early stopping

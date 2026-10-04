@@ -198,6 +198,89 @@ impl JsonFilter {
     ) -> Result<ControlFlow<B>, JsonFilterError> {
         self.program.visit(input, &self.bindings, visitor)
     }
+
+    /// Returns the first result using an explicit auxiliary input stream.
+    ///
+    /// Returns [`JsonFilterError::NoOutput`] for an empty output stream. Later
+    /// outputs and execution errors are not evaluated. See
+    /// [`Self::filter_json_visit_with_inputs`] for input and read-ahead semantics.
+    pub fn filter_json_with_inputs<I>(
+        &self,
+        input: Value,
+        auxiliary: I,
+    ) -> Result<Value, JsonFilterError>
+    where
+        I: IntoIterator<Item = Result<Value, String>>,
+        I::IntoIter: Send,
+    {
+        self.filter_json_visit_with_inputs(input, auxiliary, ControlFlow::Break)?
+            .break_value()
+            .ok_or(JsonFilterError::NoOutput)
+    }
+
+    /// Collects all results using an explicit auxiliary input stream.
+    ///
+    /// Any uncaught input or execution error discards the collected results.
+    /// See [`Self::filter_json_visit_with_inputs`] for input semantics.
+    pub fn filter_json_all_with_inputs<I>(
+        &self,
+        input: Value,
+        auxiliary: I,
+    ) -> Result<Vec<Value>, JsonFilterError>
+    where
+        I: IntoIterator<Item = Result<Value, String>>,
+        I::IntoIter: Send,
+    {
+        let mut values = Vec::new();
+        let _ = self.filter_json_visit_with_inputs(input, auxiliary, |value| {
+            values.push(value);
+            ControlFlow::<()>::Continue(())
+        })?;
+        Ok(values)
+    }
+
+    /// Visits results while `input` and `inputs` read an auxiliary stream.
+    ///
+    /// The main `input` value is separate from `auxiliary`. Consuming an
+    /// `Err(message)` raises an execution error, which the program can catch
+    /// with `try ... catch`. At exhaustion, `input` raises an execution error
+    /// and `inputs` ends normally. Unused records never become main inputs.
+    ///
+    /// Neither backend buffers the entire stream. jaq pulls items on demand;
+    /// upstream jq may read ahead on a worker thread, so the iterator must be
+    /// [`Send`]. Returning waits for that worker, including any in-flight `next`
+    /// call. The visitor runs on the calling thread and need not be `Send`.
+    /// Returning [`ControlFlow::Break`] stops output evaluation immediately.
+    ///
+    /// ```
+    /// use core::ops::ControlFlow;
+    /// use jq::JsonFilter;
+    /// use serde_json::json;
+    ///
+    /// let filter: JsonFilter = "., inputs".parse()?;
+    /// let extra = [json!(2), json!(3)].into_iter().map(Ok);
+    /// let mut seen = Vec::new();
+    /// let status = filter.filter_json_visit_with_inputs(json!(1), extra, |value| {
+    ///     seen.push(value);
+    ///     ControlFlow::<()>::Continue(())
+    /// })?;
+    /// assert_eq!(status, ControlFlow::Continue(()));
+    /// assert_eq!(seen, [json!(1), json!(2), json!(3)]);
+    /// # Ok::<(), jq::JsonFilterError>(())
+    /// ```
+    pub fn filter_json_visit_with_inputs<I, B>(
+        &self,
+        input: Value,
+        auxiliary: I,
+        visitor: impl FnMut(Value) -> ControlFlow<B>,
+    ) -> Result<ControlFlow<B>, JsonFilterError>
+    where
+        I: IntoIterator<Item = Result<Value, String>>,
+        I::IntoIter: Send,
+    {
+        self.program
+            .visit_with_inputs(input, &self.bindings, Some(auxiliary.into_iter()), visitor)
+    }
 }
 
 fn validate_bindings(bindings: &[(String, Value)]) -> Result<(), JsonFilterError> {
