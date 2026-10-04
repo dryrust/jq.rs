@@ -12,10 +12,6 @@ requires no caller code changes wherever possible.
 
 ## P1: Correctness and portability
 
-- [ ] Eliminate profile-dependent integer overflow in the backend.
-  Audit negation, remainder, and division boundaries in jaq-json 2.x. Add
-  regressions in both profiles and account for 32-bit machine-sized integers.
-
 - [ ] Verify no-std capability boundaries.
   Test core filtering and float rounding without std, and document optional
   standard-library functions that require std. Compile a consumer using the

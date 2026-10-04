@@ -128,3 +128,43 @@ fn length_retains_non_integer_behavior() -> Result<(), JsonFilterError> {
     assert_number("-18446744073709551615 | length", "18446744073709551615")?;
     Ok(())
 }
+
+#[test]
+fn negation_and_remainder_handle_the_minimum_integer() -> Result<(), JsonFilterError> {
+    let min = isize::MIN;
+    assert_number(&format!("-({min})"), &min.unsigned_abs().to_string())?;
+    assert_number(&format!("-(-({min}))"), &min.to_string())?;
+    assert_number(&format!("{min} % (-1)"), "0")?;
+    assert_number("-18446744073709551616 % (-1)", "0")?;
+    assert_number("-5 % 3", "-2")?;
+    assert_number("5 % (-3)", "2")?;
+    let filter: JsonFilter = "-.".parse()?;
+    assert_eq!(filter.filter_json(json!(min))?, json!(min.unsigned_abs()));
+    Ok(())
+}
+
+#[test]
+fn zero_divisors_follow_the_numeric_contract() -> Result<(), JsonFilterError> {
+    for source in ["1 % 0", "18446744073709551616 % 0"] {
+        let filter: JsonFilter = source.parse()?;
+        assert!(matches!(
+            filter.filter_json(json!(null)),
+            Err(JsonFilterError::Execute(_))
+        ));
+        assert!(matches!(
+            filter.filter_json_all(json!(null)),
+            Err(JsonFilterError::Execute(_))
+        ));
+    }
+    for source in ["1 / 0", "0 / 0"] {
+        let filter: JsonFilter = source.parse()?;
+        assert_eq!(filter.filter_json(json!(null))?, json!(null));
+        assert_eq!(filter.filter_json_all(json!(null))?, [json!(null)]);
+    }
+    let filter: JsonFilter = ". / (-1)".parse()?;
+    assert_eq!(
+        filter.filter_json(json!(isize::MIN))?,
+        json!(-(isize::MIN as f64))
+    );
+    Ok(())
+}
