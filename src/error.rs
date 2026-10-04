@@ -18,6 +18,10 @@ pub enum JsonFilterError {
     #[error("output conversion error: {0}")]
     Output(#[source] serde_json::Error),
 
+    /// A backend value uses a type that JSON cannot represent.
+    #[error("non-JSON output: {0}")]
+    OutputValue(String),
+
     /// The filter program could not be loaded or compiled.
     #[error("compilation error: {}", DisplayDiagnostics(.0))]
     Compile(Vec<CompilationDiagnostic>),

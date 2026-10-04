@@ -24,10 +24,13 @@ fn main() {
     println!("jaq backend; {iterations} iterations; 10 warmup iterations");
 
     measure("stdlib/definitions", iterations, || {
-        jaq_std::defs().chain(jaq_json::defs()).collect::<Vec<_>>()
+        jaq_core::defs()
+            .chain(jaq_std::defs())
+            .chain(jaq_json::defs())
+            .collect::<Vec<_>>()
     });
     measure("stdlib/native-functions", iterations, || {
-        jaq_std::funs::<jaq_json::Val>()
+        jaq_std::funs::<jaq_core::data::JustLut<jaq_json::Val>>()
             .chain(jaq_json::funs())
             .collect::<Vec<_>>()
     });
@@ -70,8 +73,8 @@ fn main() {
         measure(&format!("conversion/{size}/parse-json"), iterations, || {
             serde_json::from_str::<Value>(black_box(&text)).unwrap()
         });
-        measure(&format!("conversion/{size}/to-jaq"), iterations, || {
-            jaq_json::Val::from(black_box(input.clone()))
+        measure(&format!("conversion/{size}/parse-jaq"), iterations, || {
+            jaq_json::read::parse_single(black_box(text.as_bytes())).unwrap()
         });
         measure(&format!("identity/{size}/value"), iterations, || {
             identity.filter_json(black_box(input.clone())).unwrap()

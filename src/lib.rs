@@ -3,8 +3,8 @@
 //! Compile and reuse jq-style filters over JSON values.
 //!
 //! The default `jaq` feature provides the filtering API. The crate uses `alloc`
-//! and is declared `no_std`, but the current jaq dependency graph still requires
-//! a target with the standard library. The `std` feature is enabled by default.
+//! and supports `no_std` with `--no-default-features --features jaq`.
+//! The `std` feature is enabled by default.
 //!
 //! # Features
 //!
@@ -63,8 +63,8 @@
 //! using `serde_json::Number`: integers beyond its exact range may lose precision,
 //! and out-of-range exponents such as `1e400` return an output conversion error.
 //! A consumer enabling `serde_json/arbitrary_precision` can retain such literals
-//! exactly. This does not make backend arithmetic arbitrary-precision; jaq uses
-//! machine-sized integers and floating-point arithmetic internally.
+//! exactly. jaq promotes overflowing integer arithmetic to big integers;
+//! operations involving floating-point numbers still use floating-point math.
 //!
 //! # Object order
 //!

@@ -30,7 +30,11 @@ publish = true
 [features]
 default = ["all", "std"]
 all = ["jaq", "jq"]
-std = ["jaq-core?/std", "jaq-std?/std", "serde_json?/std", "thiserror?/std"]
+std = [
+    "jaq-core?/std", "jaq-json?/std", "jaq-std?/std",
+    "jaq-std?/format", "jaq-std?/log", "jaq-std?/math",
+    "jaq-std?/regex", "jaq-std?/time", "serde_json?/std", "thiserror?/std",
+]
 # Reserved for experimental APIs; currently has no effect.
 unstable = []
 
@@ -50,11 +54,8 @@ harness = false
 required-features = ["jaq", "std"]
 
 [dependencies]
-jaq-core = { version = "2.2", default-features = false, optional = true }
-jaq-json = { version = "1.1", default-features = false, features = [
-    "parse",
-    "serde_json",
-], optional = true }
-jaq-std = { version = "2.1", default-features = false, optional = true }
+jaq-core = { version = "3.1.1", default-features = false, optional = true }
+jaq-json = { version = "2.0.3", default-features = false, optional = true }
+jaq-std = { version = "3.0.3", default-features = false, optional = true }
 serde_json = { version = "1", default-features = false, features = ["alloc"], optional = true }
 thiserror = { version = "2", default-features = false, optional = true }

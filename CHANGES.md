@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `JsonFilter::filter_json_visit` for incremental output and early stopping
 
 ### Fixed
+- Support the jaq backend on no-std targets
+- Promote overflowing integer arithmetic instead of wrapping or panicking
 - Report `input` exhaustion as an execution error on both backends
 - Reject unsupported data imports during compilation
 - Return execution errors for `halt` and `halt_error` instead of exiting

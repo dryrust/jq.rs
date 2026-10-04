@@ -3,22 +3,51 @@
 use crate::JsonFilterError;
 use alloc::{
     format,
+    rc::Rc,
     string::{String, ToString},
     vec::Vec,
 };
 use core::ops::ControlFlow;
 use jaq_core::{
-    Ctx, Filter, Native, RcIter,
+    Ctx, DataT, Filter, Lut, Native, Vars,
+    data::HasLut,
     load::{Arena, File, Loader},
+    native::v,
 };
-use jaq_json::Val;
+use jaq_json::{Num, Val};
+use jaq_std::input::{HasInputs, Inputs, RcIter};
 use serde_json::Value;
 
 mod diagnostic;
 
 #[derive(Clone, Default)]
 pub(crate) struct Program {
-    filter: Filter<Native<Val>>,
+    filter: Rc<Filter<Data>>,
+}
+
+struct Data;
+
+impl DataT for Data {
+    type V<'a> = Val;
+    type Data<'a> = Runtime<'a>;
+}
+
+#[derive(Clone, Copy)]
+struct Runtime<'a> {
+    lut: &'a Lut<Data>,
+    inputs: Inputs<'a, Val>,
+}
+
+impl<'a> HasLut<'a, Data> for Runtime<'a> {
+    fn lut(&self) -> &'a Lut<Data> {
+        self.lut
+    }
+}
+
+impl<'a> HasInputs<'a, Val> for Runtime<'a> {
+    fn inputs(&self) -> Inputs<'a, Val> {
+        self.inputs
+    }
 }
 
 impl Program {
@@ -30,34 +59,55 @@ impl Program {
             code: input,
             path: (),
         };
-        // Match upstream jq: input exhaustion is an error, while inputs simply
-        // ends. jaq's default `def input: first(inputs)` silently yields nothing.
-        let defs = jaq_std::defs()
-            .filter(|definition| definition.name != "input")
-            .chain(jaq_json::defs());
-        let funs = jaq_std::funs()
-            .chain(jaq_json::funs())
-            .chain(core::iter::once((
-                "input",
-                jaq_std::v(0),
-                Native::new(|_, cv| {
-                    let value =
-                        cv.0.inputs()
-                            .next()
-                            .unwrap_or_else(|| Err("auxiliary input exhausted".into()));
-                    jaq_core::box_iter::box_once(
-                        value.map_err(|message| jaq_json::Error::str(message).into()),
+        let defs = jaq_core::defs()
+            .chain(jaq_std::defs())
+            .chain(jaq_json::defs())
+            .filter(|definition| !matches!(definition.name, "halt" | "halt_error"));
+        #[cfg(feature = "std")]
+        let std_funs = jaq_std::funs::<Data>();
+        #[cfg(not(feature = "std"))]
+        let std_funs = jaq_std::base_funs::<Data>();
+        let halts = [
+            ("halt", 0),
+            ("halt", 1),
+            ("halt_error", 0),
+            ("halt_error", 1),
+        ]
+        .into_iter()
+        .map(|(name, arity)| {
+            (
+                name,
+                v(arity),
+                Native::<Data>::new(|_| {
+                    jaq_core::box_iter::box_once(Err(jaq_json::Error::str(
+                        "process termination is disabled",
                     )
+                    .into()))
                 }),
-            )))
+            )
+        });
+        let funs = jaq_core::funs::<Data>()
+            .chain(std_funs)
+            .chain(jaq_json::funs::<Data>())
+            .filter(|(name, _, _)| !matches!(*name, "halt" | "halt_error"))
+            .chain(halts)
+            .chain(
+                jaq_std::input::funs::<Data>()
+                    .into_vec()
+                    .into_iter()
+                    .map(|(name, args, run)| (name, args, Native::<Data>::new(run))),
+            )
             .map(|(name, args, implementation)| {
-                // Process termination is inappropriate in an embedded filter.
                 let implementation = match name {
-                    "halt" | "halt_error" => Native::new(|_, _| {
-                        jaq_core::box_iter::box_once(Err(jaq_json::Error::str(
-                            "process termination is disabled",
+                    "input" => Native::<Data>::new(|cv| {
+                        let value =
+                            cv.0.data()
+                                .inputs()
+                                .next()
+                                .unwrap_or_else(|| Err("auxiliary input exhausted".into()));
+                        jaq_core::box_iter::box_once(
+                            value.map_err(|message| jaq_json::Error::str(message).into()),
                         )
-                        .into()))
                     }),
                     _ => implementation,
                 };
@@ -85,7 +135,9 @@ impl Program {
             .compile(modules)
             .map_err(|errors| JsonFilterError::Compile(diagnostic::compile_errors(errors)))?;
 
-        Ok(Self { filter })
+        Ok(Self {
+            filter: Rc::new(filter),
+        })
     }
 }
 
@@ -110,12 +162,21 @@ impl Program {
             auxiliary
                 .into_iter()
                 .flatten()
-                .map(|value| value.map(Val::from)),
+                .map(|value| value.map(from_json)),
         );
-        let values = bindings.iter().map(|(_, value)| Val::from(value.clone()));
+        let values = bindings.iter().map(|(_, value)| from_json(value.clone()));
+        let context = Ctx::<Data>::new(
+            Runtime {
+                lut: &self.filter.lut,
+                inputs: &inputs,
+            },
+            Vars::new(values),
+        );
         for output in self
             .filter
-            .run((Ctx::new(values, &inputs), Val::from(input)))
+            .id
+            .run((context, from_json(input)))
+            .map(jaq_core::unwrap_valr)
         {
             let value = to_json(&output.map_err(execution_error)?)?;
             if let ControlFlow::Break(value) = visitor(value) {
@@ -130,22 +191,59 @@ fn execution_error(error: jaq_json::Error) -> JsonFilterError {
     JsonFilterError::Execute(error.to_string())
 }
 
+fn from_json(value: Value) -> Val {
+    match value {
+        Value::Null => Val::Null,
+        Value::Bool(value) => Val::Bool(value),
+        Value::Number(value) => {
+            let text = value.to_string();
+            Val::Num(Num::from_str_radix(&text, 10).unwrap_or_else(|| Num::Dec(text.into())))
+        }
+        Value::String(value) => Val::from(value),
+        Value::Array(values) => values.into_iter().map(from_json).collect(),
+        Value::Object(values) => Val::obj(
+            values
+                .into_iter()
+                .map(|(key, value)| (Val::from(key), from_json(value)))
+                .collect(),
+        ),
+    }
+}
+
 // Check every nested number rather than using jaq-json's panicking conversion.
 fn to_json(value: &Val) -> Result<Value, JsonFilterError> {
     Ok(match value {
         Val::Null => Value::Null,
         Val::Bool(value) => Value::Bool(*value),
-        Val::Int(value) => Value::Number((*value).into()),
-        Val::Float(value) => {
+        Val::Num(Num::Int(value)) => Value::Number((*value).into()),
+        Val::Num(Num::Float(value)) => {
             serde_json::Number::from_f64(*value).map_or(Value::Null, Value::Number)
         }
-        Val::Num(value) => Value::Number(value.parse().map_err(JsonFilterError::Output)?),
-        Val::Str(value) => Value::String((**value).clone()),
+        Val::Num(value) => {
+            Value::Number(value.to_string().parse().map_err(JsonFilterError::Output)?)
+        }
+        Val::TStr(value) => Value::String(
+            core::str::from_utf8(value)
+                .map_err(|error| JsonFilterError::OutputValue(error.to_string()))?
+                .into(),
+        ),
+        Val::BStr(_) => {
+            return Err(JsonFilterError::OutputValue(
+                "binary strings are not JSON strings".into(),
+            ));
+        }
         Val::Arr(values) => Value::Array(values.iter().map(to_json).collect::<Result<_, _>>()?),
         Val::Obj(values) => Value::Object(
             values
                 .iter()
-                .map(|(key, value)| Ok(((**key).clone(), to_json(value)?)))
+                .map(|(key, value)| {
+                    let Value::String(key) = to_json(key)? else {
+                        return Err(JsonFilterError::OutputValue(
+                            "JSON object keys must be strings".into(),
+                        ));
+                    };
+                    Ok((key, to_json(value)?))
+                })
                 .collect::<Result<_, JsonFilterError>>()?,
         ),
     })

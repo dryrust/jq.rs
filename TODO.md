@@ -13,25 +13,19 @@ requires no caller code changes wherever possible.
 ## P1: Correctness and portability
 
 - [ ] Eliminate profile-dependent integer overflow in the backend.
-  Through `src/jaq.rs` evaluation, `9223372036854775807 + 1` panics in debug
-  builds but returns `-9223372036854775808` in release builds. Fix or upgrade
-  the jaq-json arithmetic implementation to promote or report overflow
-  consistently. Add boundary regressions for arithmetic in both profiles
-  and account for the backend's machine-sized integers on 32-bit targets.
+  Audit addition, subtraction, multiplication, negation, remainder, and
+  absolute-value boundaries in jaq-json 2.x. Add regressions in both profiles
+  and account for machine-sized integers on 32-bit targets. Check `length`
+  on the minimum integer: upstream still calls `isize::abs` directly.
 
-- [ ] Make the `jaq` feature genuinely usable without `std`.
-  In `Cargo.toml:28,40-45`, disabling direct dependency defaults does not
-  disable transitive defaults: jaq-json enables jaq-std's default features,
-  and the graph also enables jaq-core/std and std-dependent crates such as
-  once_cell and regex-lite. Fix or upgrade the transitive feature wiring.
-  `cargo check --no-default-features --features jaq` passes on the host but
-  fails with E0463 when adding `--target thumbv7em-none-eabihf`; the same
-  target builds with no features. Require the functional backend to pass
-  this bare-metal check, rather than checking only the empty API surface.
+- [ ] Verify no-std capability boundaries.
+  Test core filtering and float rounding without std, and document optional
+  standard-library functions that require std. Compile a consumer using the
+  public API on bare metal, rather than checking only the library itself.
 
-  Upgrade note: jaq-json 1.1.3 still enables transitive defaults. Current
-  upstream jaq-json 2.x changes the value and backend APIs, so portability and
-  arithmetic fixes need a coordinated dependency migration.
+- [ ] Define JSON-output compatibility for jaq-json 2.x.
+  Test rejection of binary strings, invalid UTF-8, and non-string object keys.
+  Cover computed big integers with consumer arbitrary precision enabled.
 
 ## P2: Build, API, and regression guarantees
 

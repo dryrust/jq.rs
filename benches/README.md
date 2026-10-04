@@ -13,8 +13,8 @@ include cloning the owned input. Result destruction is included in timing.
 The benchmarks deliberately select jaq, including when `jq` is also enabled.
 
 Conversion cases compare a small object with 1,024 nested Unicode-bearing
-objects. JSON parsing and Value-to-jaq conversion are measured separately;
-the latter includes input cloning, with a clone-only baseline. Identity cases
+objects. serde_json and jaq parsing are measured separately, alongside a
+clone-only baseline for owned Value inputs. Identity cases
 measure the public round trip, including checked output conversion and result
 destruction. Input JSON text is serialized before timing. The string and Value
 cases therefore compare parsing against cloning an existing owned value.
