@@ -31,12 +31,8 @@ requires no caller code changes wherever possible.
 
 ## P2: Build, API, and regression guarantees
 
-- [ ] Implement upstream `jq` as the first additional backend.
-  Prioritize this before integrating further Rust jq implementations. Use
-  the existing `jq` feature for a private, std-dependent adapter that invokes
-  the actual upstream `jq` program as a subprocess. Keep process management,
-  JSON stdin/stdout handling, and stderr/exit-status translation internal;
-  map outcomes to the common public API. Run shared contract tests against
+- [ ] Share API contract tests and CI coverage with the upstream jq backend.
+  Run shared contract tests against
   both backends, including empty output, multiple results, and errors after
   the first result.
 

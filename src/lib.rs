@@ -8,18 +8,21 @@
 //!
 //! # Features
 //!
-//! - `all`: enables every implemented backend, currently just `jaq`.
+//! - `all`: enables every implemented backend (`jaq` and `jq`).
 //! - `jaq`: enables the jaq implementation and public filtering API.
 //! - `std`: enables standard-library support in dependencies.
-//! - `jq`: reserved for an upstream jq subprocess backend requiring `std`.
+//! - `jq`: enables the upstream jq subprocess backend and requires `std`.
 //! - `libjq`, `xq`: reserved for unimplemented backends.
 //! - `unstable`: reserved for experimental APIs; currently has no effect.
 //!
 //! Defaults enable `all` and `std`. Reserved flags do not provide a filtering
-//! API on their own; builds without `jaq` currently export no filter types.
+//! API on their own. `jaq` takes precedence when both backends are enabled.
+//! To use upstream jq, disable defaults and enable only `jq`; a `jq` executable
+//! must be available on `PATH` during construction and evaluation. Each call
+//! starts a fresh process, which is reaped on completion or early stopping.
 //!
 //! ```
-//! # #[cfg(feature = "jaq")] {
+//! # #[cfg(any(feature = "jaq", feature = "jq"))] {
 //! use jq::JsonFilter;
 //! use serde_json::json;
 //!
@@ -41,13 +44,16 @@
 //!
 //! # Backend compatibility
 //!
-//! The current backend is jaq, whose language behavior can differ from upstream
+//! The default backend is jaq, whose language behavior can differ from upstream
 //! jq. External module loading and externally supplied variable bindings are
 //! unsupported. Auxiliary input is empty: `inputs` produces no values and
 //! `input` encounters exhaustion. Backend selection is intended to remain an
 //! implementation detail of the public filtering API.
 //!
 //! # Numbers
+//!
+//! The following describes jaq; the subprocess backend follows the installed
+//! upstream jq version's numeric semantics.
 //!
 //! jaq's nonfinite floating-point results (`nan`, `infinite`, `1 / 0`) become
 //! JSON null, including inside arrays and objects. Literal numbers are converted
@@ -74,17 +80,21 @@
 #![deny(missing_docs)]
 
 extern crate alloc;
+#[cfg(feature = "std")]
+extern crate std;
 
-#[cfg(feature = "jaq")]
+#[cfg(any(feature = "jaq", feature = "jq"))]
 mod error;
-#[cfg(feature = "jaq")]
+#[cfg(any(feature = "jaq", feature = "jq"))]
 pub use error::JsonFilterError;
 
-#[cfg(feature = "jaq")]
+#[cfg(any(feature = "jaq", feature = "jq"))]
 mod filter;
 #[cfg(feature = "jaq")]
 mod jaq;
-#[cfg(feature = "jaq")]
+#[cfg(all(feature = "jq", not(feature = "jaq")))]
+mod jq;
+#[cfg(any(feature = "jaq", feature = "jq"))]
 pub use filter::JsonFilter;
 
 #[doc = include_str!("../README.md")]

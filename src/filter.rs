@@ -1,6 +1,10 @@
 // This is free and unencumbered software released into the public domain.
 
-use crate::{JsonFilterError, jaq::Program};
+use crate::JsonFilterError;
+#[cfg(feature = "jaq")]
+use crate::jaq::Program;
+#[cfg(all(feature = "jq", not(feature = "jaq")))]
+use crate::jq::Program;
 use alloc::vec::Vec;
 use core::{ops::ControlFlow, str::FromStr};
 use serde_json::Value;
