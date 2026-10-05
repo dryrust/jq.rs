@@ -7,11 +7,11 @@ resolver = "3"
 
 [package]
 name = "jq"
-version = "0.1.1"
+version = "0.2.0"
 authors = ["Arto Bendiken"]
 edition = "2024"
 rust-version = "1.97"
-description = "jq.rs"
+description = "jq.rs transforms JSON using the jq language"
 #documentation = "https://docs.rs/jq"
 readme = true
 homepage = "https://github.com/dryrust/jq.rs"
