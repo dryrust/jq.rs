@@ -1,24 +1,13 @@
-# jq.rs
+# {{ project.title }}
 
-[![License](https://img.shields.io/badge/license-Public%20Domain-blue.svg)](https://unlicense.org)
-[![Compatibility](https://img.shields.io/badge/rust-1.97%2B-blue)](https://endoflife.date/rust)
-[![Package on Crates.io](https://img.shields.io/crates/v/jq)](https://crates.io/crates/jq)
-[![Documentation](https://img.shields.io/docsrs/jq?label=docs.rs)](https://docs.rs/jq)
+{% render 'badge/unlicense' %}
+{% render 'badge/rust-compat', version: package.language.minimum_version %}
+{% render 'badge/rust-package', name: package.name %}
+{% render 'badge/rust-docs', name: package.name %}
 
-**jq.rs brings [jq]-style JSON filtering to Rust.**
+**{{ project.summary }}**
 
-<sub>
-
-[[Features](#-features)] |
-[[Prerequisites](#%EF%B8%8F-prerequisites)] |
-[[Installation](#%EF%B8%8F-installation)] |
-[[Examples](#-examples)] |
-[[Reference](#-reference)] |
-[[Development](#%E2%80%8D-development)]
-
-</sub>
-
-<br/>
+{% render 'header/toc' %}
 
 ## ✨ Features
 
@@ -32,7 +21,7 @@
 
 ## 🛠️ Prerequisites
 
-- [Rust] 1.97+ (2024 edition)
+- [Rust] {{ package.language.minimum_version }}+ (2024 edition)
 - A [jq] executable in the `PATH` (only when using the subprocess backend)
 
 ## ⬇️ Installation
@@ -40,14 +29,14 @@
 Install the latest release from [Crates.io]:
 
 ```bash
-cargo add jq serde_json
+cargo add {{ package.name }} serde_json
 ```
 
 For the development version documented here, including named bindings and the
 subprocess backend:
 
 ```bash
-cargo add jq --git https://github.com/dryrust/jq.rs
+cargo add {{ package.name }} --git {{ github.repository.link }}
 cargo add serde_json
 ```
 
@@ -128,25 +117,21 @@ Both backends use the same Rust API, but their jq language behavior can differ.
 ## 👨‍💻 Development
 
 ```bash
-git clone https://github.com/dryrust/jq.rs.git
+git clone {{ github.repository.url }}
 ```
 
 <sup><sub>This README was generated with [Readmer].</sub></sup>
 
 ---
 
-[![Share on X](https://img.shields.io/badge/share%20on-x-03A9F4?logo=x)](https://x.com/intent/post?url=https%3A%2F%2Fgithub.com%2Fdryrust%2Fjq.rs&text=jq.rs)
-[![Share on Reddit](https://img.shields.io/badge/share%20on-reddit-red?logo=reddit)](https://reddit.com/submit?url=https%3A%2F%2Fgithub.com%2Fdryrust%2Fjq.rs&title=jq.rs)
-[![Share on Hacker News](https://img.shields.io/badge/share%20on-hn-orange?logo=ycombinator)](https://news.ycombinator.com/submitlink?u=https%3A%2F%2Fgithub.com%2Fdryrust%2Fjq.rs&t=jq.rs)
-[![Share on Facebook](https://img.shields.io/badge/share%20on-fb-1976D2?logo=facebook)](https://www.facebook.com/sharer/sharer.php?u=https%3A%2F%2Fgithub.com%2Fdryrust%2Fjq.rs)
-[![Share on LinkedIn](https://img.shields.io/badge/share%20on-linkedin-3949AB?logo=linkedin)](https://www.linkedin.com/sharing/share-offsite/?url=https%3A%2F%2Fgithub.com%2Fdryrust%2Fjq.rs)
+{% render 'footer/share', title: project.title, url: github.repository.link %}
 
-[API documentation]: https://docs.rs/jq
-[Crates.io]: https://crates.io/crates/jq
+[API documentation]: https://docs.rs/{{ package.name }}
+[Crates.io]: https://crates.io/crates/{{ package.name }}
 [Readmer]: https://github.com/artob/readmer
 [Rust]: https://rust-lang.org
 [jaq]: https://github.com/01mf02/jaq
 [jq]: https://jqlang.org
-[`JsonFilter`]: https://docs.rs/jq/latest/jq/struct.JsonFilter.html
-[`JsonFilterError`]: https://docs.rs/jq/latest/jq/enum.JsonFilterError.html
+[`JsonFilter`]: https://docs.rs/{{ package.name }}/latest/jq/struct.JsonFilter.html
+[`JsonFilterError`]: https://docs.rs/{{ package.name }}/latest/jq/enum.JsonFilterError.html
 [`serde_json::Value`]: https://docs.rs/serde_json/latest/serde_json/enum.Value.html

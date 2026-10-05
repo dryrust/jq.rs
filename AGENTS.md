@@ -23,6 +23,8 @@
 - Don't include superfluous technical detail; be terse and aim for brevity.
 
 # `README.md`
+- Edit `.config/readmer/README.md.liquid` and `project.yaml` in that directory;
+  regenerate with `readmer render > README.md`.
 - Don't update `README.md` casually: beneficial additions require significant
   judgment and discernment, possibly beyond your capabilities. Longer and more
   detailed does *not* in fact equal better, because humans are not LLMs!

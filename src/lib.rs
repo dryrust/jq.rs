@@ -116,5 +116,5 @@ mod jq;
 pub use filter::JsonFilter;
 
 #[doc = include_str!("../README.md")]
-#[cfg(doctest)]
+#[cfg(all(doctest, any(feature = "jaq", feature = "jq")))]
 pub struct ReadmeDoctests;

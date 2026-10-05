@@ -1,0 +1,5 @@
+# See: https://github.com/artob/readmer#template-variables
+---
+label: jq.rs
+title: jq.rs
+summary: jq.rs brings [jq]-style JSON filtering to Rust.
