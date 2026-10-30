@@ -3,6 +3,7 @@
   suggest humongous changes in one go; instead, interpret the user's request in
   the most narrow way possible and produce a coherent, review-friendly patch
   with a suggested commit message (one line, verb-first, terse, max 72 chars).
+- Do *not* add `Co-Authored-By` metadata to commits.
 
 # Project files
 - Don't ask to examine parent directories, stick to the project directory.
