@@ -350,8 +350,24 @@ fn from_json(value: Value) -> Val {
     }
 }
 
-// Check numbers, text, and object keys recursively at the JSON API boundary.
+// serde_json's parser accepts at most this many nested arrays and objects.
+// Enforcing its limit lets every result round-trip through serde_json, keeps
+// callers from overflowing their stacks when dropping or serializing results,
+// and matches the jq backend, whose output serde_json parses.
+const MAX_DEPTH: usize = 127;
+
 fn to_json(value: &Val) -> Result<Value, JsonFilterError> {
+    to_json_within(value, MAX_DEPTH)
+}
+
+// Check numbers, text, keys, and nesting recursively at the JSON API boundary.
+fn to_json_within(value: &Val, depth: usize) -> Result<Value, JsonFilterError> {
+    let nested = |value| to_json_within(value, depth - 1);
+    if matches!(value, Val::Arr(_) | Val::Obj(_)) && depth == 0 {
+        return Err(JsonFilterError::Output(serde::de::Error::custom(
+            "recursion limit exceeded",
+        )));
+    }
     Ok(match value {
         Val::Null => Value::Null,
         Val::Bool(value) => Value::Bool(*value),
@@ -368,7 +384,7 @@ fn to_json(value: &Val) -> Result<Value, JsonFilterError> {
                 "binary strings are not JSON strings".into(),
             ));
         }
-        Val::Arr(values) => Value::Array(values.iter().map(to_json).collect::<Result<_, _>>()?),
+        Val::Arr(values) => Value::Array(values.iter().map(nested).collect::<Result<_, _>>()?),
         Val::Obj(values) => Value::Object(
             values
                 .iter()
@@ -378,7 +394,7 @@ fn to_json(value: &Val) -> Result<Value, JsonFilterError> {
                             "JSON object keys must be strings".into(),
                         ));
                     };
-                    Ok((json_string(key)?, to_json(value)?))
+                    Ok((json_string(key)?, nested(value)?))
                 })
                 .collect::<Result<_, JsonFilterError>>()?,
         ),

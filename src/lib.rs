@@ -96,11 +96,10 @@
 //! | `def f: … (. + 1 \| f) + 1 …` recursion |      1k |      100k |
 //! | `[[…]]` value built and dropped         |    100k |    > 300k |
 //! | `[[…]]` value passed to `tojson`        |      3k |      300k |
-//! | `[[…]]` value returned to the caller    |     10k |       30k |
 //!
-//! Limits remain finite, so bound the size of untrusted programs. Results are
-//! returned as-is, and dropping or serializing deeply nested values recurses
-//! on the caller's stack, which `stacker` cannot protect.
+//! Limits remain finite, so bound the size of untrusted programs. Results
+//! themselves are nested at most 127 arrays or objects deep, the limit of
+//! serde_json's parser, so callers can drop and serialize them safely.
 //!
 //! # Numbers
 //!
@@ -120,7 +119,9 @@
 //!
 //! jaq can construct values outside JSON's type system. Binary strings, invalid
 //! UTF-8 text, and non-string object keys return `JsonFilterError::OutputValue`,
-//! including when nested inside otherwise valid arrays or objects.
+//! including when nested inside otherwise valid arrays or objects. On both
+//! backends, results nested more than 127 arrays or objects deep return
+//! `JsonFilterError::Output`, matching what serde_json can parse.
 //!
 //! # Object order
 //!

@@ -263,6 +263,7 @@ dependencies = [
  "jaq-json",
  "jaq-std",
  "log",
+ "serde",
  "serde_json",
  "stacker",
  "thiserror",

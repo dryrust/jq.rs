@@ -46,7 +46,7 @@ log = ["std"]
 # Runs jaq on a large stack, so deep programs and values do not abort.
 stacker = ["std", "dep:stacker"]
 
-jaq = ["_api", "dep:jaq-core", "dep:jaq-json", "dep:jaq-std"]
+jaq = ["_api", "dep:jaq-core", "dep:jaq-json", "dep:jaq-std", "dep:serde"]
 # Upstream jq subprocess backend; jaq takes precedence when both are enabled.
 jq = ["_api", "std"]
 # Reserved, unimplemented backend flags.
@@ -72,6 +72,7 @@ required-features = ["jaq", "std"]
 jaq-core = { version = "3.1.1", default-features = false, optional = true }
 jaq-json = { version = "2.0.3", default-features = false, optional = true }
 jaq-std = { version = "3.0.3", default-features = false, optional = true }
+serde = { version = "1", default-features = false, optional = true }
 serde_json = { version = "1", default-features = false, features = ["alloc"], optional = true }
 stacker = { version = "0.1.25", optional = true }
 thiserror = { version = "2", default-features = false, optional = true }

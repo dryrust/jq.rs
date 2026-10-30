@@ -20,10 +20,6 @@ countermeasures (README "Security"; issues #467 open, #477 closed).
 - The opt-in `stacker` feature runs jaq on a 256 MiB segment, costing
   ~4.5 µs per call; off by default to keep parity with plain jaq in
   benchmarks. Persistent worker threads were slower: ~2.3 µs per output.
-- Deep output values still overflow the caller when dropped or serialized
-  (serde_json recursion; ~10k levels on a 2 MiB stack). Consider rejecting
-  results nested deeper than a limit in `to_json`, as jq/serde_json do for
-  input parsing.
 - jaq, time/memory: not enforceable in-process. Wrapping natives for fuel
   misses pure recursion (`def f: f; f`, `repeat`), so don't ship it as a
   limit. Needs an upstream opt-in hook (per-call tick returning `Exn`;

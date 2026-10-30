@@ -13,6 +13,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   and values no longer crash the host process at modest depths
 ### Changed
 - Mark `JsonFilterError` as `#[non_exhaustive]`
+### Security
+- Reject jaq results nested more than 127 levels deep, as the jq backend
+  already did, so callers cannot overflow their stacks on deep results
 
 ## [0.3.1] - 2026-10-30
 ### Added
