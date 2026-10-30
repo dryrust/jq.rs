@@ -115,6 +115,31 @@ impl JsonFilter {
         Ok(())
     }
 
+    /// Stops each evaluation call that runs longer than `timeout`.
+    ///
+    /// Only the upstream jq subprocess backend can interrupt evaluation, so this
+    /// method exists only when that backend is selected. The deadline covers a
+    /// whole call, from starting jq until it finishes, including time spent in
+    /// visitors. A jq process still running at the deadline is killed, and the
+    /// call returns [`JsonFilterError::Timeout`]; results already delivered to a
+    /// visitor remain delivered. `None`, the default, waits indefinitely.
+    /// Construction is not subject to the timeout. Clones keep the setting.
+    ///
+    /// ```
+    /// use core::time::Duration;
+    /// use jq::{JsonFilter, JsonFilterError};
+    /// use serde_json::json;
+    ///
+    /// let mut filter: JsonFilter = "def f: f; f".parse()?;
+    /// filter.set_timeout(Some(Duration::from_millis(100)));
+    /// assert!(matches!(filter.filter_json(json!(null)), Err(JsonFilterError::Timeout)));
+    /// # Ok::<(), JsonFilterError>(())
+    /// ```
+    #[cfg(all(feature = "jq", not(feature = "jaq")))]
+    pub fn set_timeout(&mut self, timeout: Option<core::time::Duration>) {
+        self.program.set_timeout(timeout);
+    }
+
     /// Parses one JSON value and returns only its first filter result.
     ///
     /// Use [`Self::filter_json_str_all`] to retain all results and detect errors

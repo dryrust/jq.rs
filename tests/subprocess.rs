@@ -81,3 +81,43 @@ fn drains_large_input_and_error_pipes() -> Result<(), JsonFilterError> {
     assert!(error.to_string().contains(&"x".repeat(1024)));
     Ok(())
 }
+
+#[test]
+fn timeouts_stop_runaway_evaluations() -> Result<(), JsonFilterError> {
+    use std::time::{Duration, Instant};
+    for source in ["def f: f; f", "repeat(.)", "1, (def f: f; f)"] {
+        let mut filter: JsonFilter = source.parse()?;
+        filter.set_timeout(Some(Duration::from_millis(200)));
+        let start = Instant::now();
+        let error = filter.filter_json_all(json!(1)).unwrap_err();
+        assert!(
+            matches!(error, JsonFilterError::Timeout),
+            "{source}: {error}"
+        );
+        assert!(start.elapsed() < Duration::from_secs(10), "{source}");
+    }
+    // Results produced before the deadline still reach the visitor.
+    let mut filter: JsonFilter = "1, (def f: f; f)".parse()?;
+    filter.set_timeout(Some(Duration::from_millis(200)));
+    let mut seen = vec![];
+    let result = filter.filter_json_visit(json!(null), |value| {
+        seen.push(value);
+        ControlFlow::<()>::Continue(())
+    });
+    assert!(matches!(result, Err(JsonFilterError::Timeout)));
+    assert_eq!(seen, [json!(1)]);
+    // Fast evaluations and execution errors are unaffected.
+    let mut filter: JsonFilter = ".[]".parse()?;
+    filter.set_timeout(Some(Duration::from_secs(10)));
+    assert_eq!(
+        filter.clone().filter_json_all(json!([1, 2]))?,
+        [json!(1), json!(2)]
+    );
+    let mut filter: JsonFilter = "error(\"x\")".parse()?;
+    filter.set_timeout(Some(Duration::from_secs(10)));
+    assert!(matches!(
+        filter.filter_json(json!(null)),
+        Err(JsonFilterError::Execute(_))
+    ));
+    Ok(())
+}

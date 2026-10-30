@@ -33,4 +33,9 @@ pub enum JsonFilterError {
     /// Evaluation failed with an owned, backend-independent diagnostic.
     #[error("execution error: {0}")]
     Execute(String),
+
+    /// Evaluation exceeded the timeout set with `JsonFilter::set_timeout`.
+    #[cfg(all(feature = "jq", not(feature = "jaq")))]
+    #[error("evaluation timed out")]
+    Timeout,
 }

@@ -38,7 +38,8 @@
 //! must be available on `PATH` during construction and evaluation. Each call
 //! starts a fresh process, which is reaped on completion or early stopping.
 //! Unlike jaq, the subprocess backend validates source at construction and
-//! recompiles it within each evaluation process.
+//! recompiles it within each evaluation process. Only this backend provides
+//! `JsonFilter::set_timeout`, as jaq cannot interrupt a running evaluation.
 //!
 //! ```
 //! # #[cfg(any(feature = "jaq", feature = "jq"))] {

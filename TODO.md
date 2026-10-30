@@ -26,5 +26,6 @@ countermeasures (README "Security"; issues #467 open, #477 closed).
   misses pure recursion (`def f: f; f`, `repeat`), so don't ship it as a
   limit. Needs an upstream opt-in hook (per-call tick returning `Exn`;
   parser/compiler depth limit). Draft a feature request.
-- jq: add a deadline that kills the child; a crash only kills the child.
+- docs.rs builds default features (jaq), so jq-only items such as
+  `set_timeout` and `JsonFilterError::Timeout` are not documented there.
 - Both: optional output count/size caps for `filter_json_all`.

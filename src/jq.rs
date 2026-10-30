@@ -2,21 +2,30 @@
 
 use crate::{CompilationDiagnostic, CompilationPhase, JsonFilterError};
 use alloc::{format, string::String, vec, vec::Vec};
-use core::ops::ControlFlow;
+use core::{
+    ops::ControlFlow,
+    sync::atomic::{AtomicBool, Ordering},
+    time::Duration,
+};
 use serde_json::Value;
 use std::{
     io::{BufRead, BufReader, Read, Write},
     process::{Child, Command, Stdio},
+    sync::{Mutex, MutexGuard, PoisonError, mpsc},
 };
 
 #[derive(Clone)]
 pub(crate) struct Program {
     source: String,
+    timeout: Option<Duration>,
 }
 
 impl Default for Program {
     fn default() -> Self {
-        Self { source: ".".into() }
+        Self {
+            source: ".".into(),
+            timeout: None,
+        }
     }
 }
 
@@ -56,7 +65,14 @@ impl Program {
         if !output.status.success() {
             return Err(JsonFilterError::Compile(compile_diagnostics(&output)));
         }
-        Ok(Self { source })
+        Ok(Self {
+            source,
+            timeout: None,
+        })
+    }
+
+    pub(crate) fn set_timeout(&mut self, timeout: Option<Duration>) {
+        self.timeout = timeout;
     }
 }
 
@@ -160,23 +176,49 @@ impl Program {
         } else {
             command.arg("--").arg(&self.source);
         }
-        let child = command
+        let mut child = command
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
             .spawn()
             .map_err(io_error)?;
+        let mut stdin = child.stdin.take().expect("piped stdin");
+        let stdout = child.stdout.take().expect("piped stdout");
+        let mut stderr = child.stderr.take().expect("piped stderr");
+        // Shared with the watchdog, which must be able to kill a running jq.
+        let child = Mutex::new(child);
+        let timed_out = AtomicBool::new(false);
 
         std::thread::scope(|scope| {
             // Drop the guard before scoped threads are joined, including on
-            // visitor panics: killing jq releases both pipe worker threads.
-            let mut child = ChildGuard {
-                child,
+            // visitor panics: killing jq releases the pipe worker threads.
+            let mut guard = ChildGuard {
+                child: &child,
                 reaped: false,
             };
-            let mut stdin = child.child.stdin.take().expect("piped stdin");
-            let stdout = child.child.stdout.take().expect("piped stdout");
-            let mut stderr = child.child.stderr.take().expect("piped stderr");
+            // Dropping the sender on any return also stops the watchdog.
+            let (_stop, stopped) = mpsc::channel::<()>();
+            if let Some(timeout) = self.timeout {
+                let (child, timed_out) = (&child, &timed_out);
+                scope.spawn(move || {
+                    if stopped.recv_timeout(timeout) == Err(mpsc::RecvTimeoutError::Timeout) {
+                        let mut child = lock(child);
+                        // Only a still-running jq counts as having timed out.
+                        if let Ok(None) = child.try_wait() {
+                            timed_out.store(true, Ordering::SeqCst);
+                            let _ = child.kill();
+                        }
+                    }
+                });
+            }
+            // Killing jq can truncate its output, so report the cause instead.
+            let timeout_or = |error| {
+                if timed_out.load(Ordering::SeqCst) {
+                    JsonFilterError::Timeout
+                } else {
+                    error
+                }
+            };
             // Write and drain concurrently to avoid pipe-capacity deadlocks.
             let writer = scope.spawn(move || {
                 write_record(&mut stdin, &input)?;
@@ -199,24 +241,29 @@ impl Program {
             let mut line = String::new();
             loop {
                 line.clear();
-                if reader.read_line(&mut line).map_err(io_error)? == 0 {
+                if reader
+                    .read_line(&mut line)
+                    .map_err(|error| timeout_or(io_error(error)))?
+                    == 0
+                {
                     break;
                 }
-                let value = serde_json::from_str(&line).map_err(JsonFilterError::Output)?;
+                let value = serde_json::from_str(&line)
+                    .map_err(|error| timeout_or(JsonFilterError::Output(error)))?;
                 if let ControlFlow::Break(value) = visitor(value) {
                     // Drop kills and reaps the producer before joining workers.
                     return Ok(ControlFlow::Break(value));
                 }
             }
-            let status = child.child.wait().map_err(io_error)?;
-            child.reaped = true;
+            let status = lock(&child).wait().map_err(io_error)?;
+            guard.reaped = true;
             let stderr = errors.join().map_err(|_| worker_error())??;
             let written = writer.join().map_err(|_| worker_error())?;
             if !status.success() {
-                return Err(JsonFilterError::Execute(format!(
+                return Err(timeout_or(JsonFilterError::Execute(format!(
                     "jq {status}: {}",
                     String::from_utf8_lossy(&stderr).trim()
-                )));
+                ))));
             }
             // A successful filter need not consume the entire auxiliary stream.
             if let Err(error) = written
@@ -247,18 +294,24 @@ fn write_record(writer: &mut impl Write, value: &Value) -> Result<(), std::io::E
     writer.write_all(b"\n")
 }
 
-struct ChildGuard {
-    child: Child,
+struct ChildGuard<'a> {
+    child: &'a Mutex<Child>,
     reaped: bool,
 }
 
-impl Drop for ChildGuard {
+impl Drop for ChildGuard<'_> {
     fn drop(&mut self) {
         if !self.reaped {
-            let _ = self.child.kill();
-            let _ = self.child.wait();
+            let mut child = lock(self.child);
+            let _ = child.kill();
+            let _ = child.wait();
         }
     }
+}
+
+// A panicking visitor never holds the lock, but stay robust regardless.
+fn lock(child: &Mutex<Child>) -> MutexGuard<'_, Child> {
+    child.lock().unwrap_or_else(PoisonError::into_inner)
 }
 
 fn io_error(error: impl core::fmt::Display) -> JsonFilterError {
