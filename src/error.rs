@@ -4,7 +4,11 @@ use crate::{CompilationDiagnostic, diagnostic::DisplayDiagnostics};
 use alloc::{string::String, vec::Vec};
 
 /// A failure to parse JSON, compile a filter, or evaluate it.
+///
+/// New variants may be added in minor releases, and some exist only for
+/// particular backends, so matches must include a wildcard arm.
 #[derive(Debug, thiserror::Error)]
+#[non_exhaustive]
 pub enum JsonFilterError {
     /// Variable names or values do not match the filter's binding contract.
     #[error("binding error: {0}")]
