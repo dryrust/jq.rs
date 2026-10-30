@@ -71,6 +71,17 @@
 //! reports exhaustion when no auxiliary values remain. Backend
 //! selection is intended to remain an implementation detail of the public API.
 //!
+//! # Resource limits
+//!
+//! Programs can run indefinitely or exhaust memory. The jq backend can stop
+//! evaluations with `JsonFilter::set_timeout`; jaq cannot be interrupted. jaq
+//! recurses on the native stack, where an overflow aborts the process. With
+//! `std`, it parses, compiles, and evaluates on a separate 256 MiB stack
+//! segment (32 MiB on 32-bit targets), reserved up front but committed as
+//! used. This tolerates nesting and recursion depths in the tens of thousands,
+//! but not unbounded ones: limit the size of untrusted programs. Results are
+//! returned as-is, so callers must also handle deeply nested output values.
+//!
 //! # Numbers
 //!
 //! The following describes jaq; the subprocess backend follows the installed

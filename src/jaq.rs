@@ -55,6 +55,10 @@ impl Program {
         input: &str,
         bindings: &[(String, Value)],
     ) -> Result<Self, JsonFilterError> {
+        with_large_stack(|| Self::compile_here(input, bindings))
+    }
+
+    fn compile_here(input: &str, bindings: &[(String, Value)]) -> Result<Self, JsonFilterError> {
         let program = File {
             code: input,
             path: (),
@@ -174,6 +178,16 @@ impl Program {
         input: Value,
         bindings: &[(String, Value)],
         auxiliary: Option<impl Iterator<Item = Result<Value, String>>>,
+        visitor: impl FnMut(Value) -> ControlFlow<B>,
+    ) -> Result<ControlFlow<B>, JsonFilterError> {
+        with_large_stack(|| self.visit_here(input, bindings, auxiliary, visitor))
+    }
+
+    fn visit_here<B>(
+        &self,
+        input: Value,
+        bindings: &[(String, Value)],
+        auxiliary: Option<impl Iterator<Item = Result<Value, String>>>,
         mut visitor: impl FnMut(Value) -> ControlFlow<B>,
     ) -> Result<ControlFlow<B>, JsonFilterError> {
         let inputs = RcIter::new(
@@ -203,6 +217,27 @@ impl Program {
         }
         Ok(ControlFlow::Continue(()))
     }
+}
+
+// jaq recurses on the native stack when parsing, compiling, evaluating, and
+// dropping values, and a stack overflow aborts the whole process. Run on a
+// large stack segment instead; it is reserved up front but committed lazily.
+// The segment raises overflow thresholds about a hundredfold over a 2 MiB
+// thread, without moving work (or the visitor) to another thread.
+#[cfg(feature = "std")]
+fn with_large_stack<T>(f: impl FnOnce() -> T) -> T {
+    const SIZE: usize = if cfg!(target_pointer_width = "64") {
+        256 << 20
+    } else {
+        32 << 20
+    };
+    // Callers that already run with ample stack keep using it.
+    stacker::maybe_grow(SIZE / 2, SIZE, f)
+}
+
+#[cfg(not(feature = "std"))]
+fn with_large_stack<T>(f: impl FnOnce() -> T) -> T {
+    f()
 }
 
 fn execution_error(error: jaq_json::Error) -> JsonFilterError {

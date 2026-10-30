@@ -17,11 +17,12 @@ countermeasures (README "Security"; issues #467 open, #477 closed).
 - jaq stack overflow aborts the host process. Overflow depths at 2 MiB/8 MiB
   stacks: program `[` nesting 1k/10k (at compile), `def f: 1+f` recursion
   1k/3k, nested output values 10k/30k. Flat `a, b, ...` lists too (#467).
-- jaq, mitigation: compile and run on a worker thread with a large stack
-  (e.g. 256 MiB, reserved not committed). `Filter` is `Send + Sync`, so hold
-  it in `Arc`; send converted `Value`s over a rendezvous channel so the
-  visitor stays on the caller; auxiliary iterators are already `Send`.
-  std-only. Raises limits ~100x; callers should still cap source size.
+- jaq runs on a 256 MiB `stacker` segment (std only), costing ~4.5 µs per
+  call. Persistent worker threads were slower: ~2.3 µs per output handoff.
+- Deep output values still overflow the caller when dropped or serialized
+  (serde_json recursion; ~10k levels on a 2 MiB stack). Consider rejecting
+  results nested deeper than a limit in `to_json`, as jq/serde_json do for
+  input parsing.
 - jaq, time/memory: not enforceable in-process. Wrapping natives for fuel
   misses pure recursion (`def f: f; f`, `repeat`), so don't ship it as a
   limit. Needs an upstream opt-in hook (per-call tick returning `Exn`;

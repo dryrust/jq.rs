@@ -11,6 +11,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   evaluations at a deadline
 ### Changed
 - Mark `JsonFilterError` as `#[non_exhaustive]`
+### Security
+- Run jaq on a large stack, so deeply nested programs and values no longer
+  crash the host process at modest depths
 
 ## [0.3.1] - 2026-10-30
 ### Added

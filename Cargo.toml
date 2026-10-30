@@ -34,6 +34,7 @@ std = [
     "jaq-core?/std", "jaq-json?/std", "jaq-std?/std",
     "jaq-std?/format", "jaq-std?/log", "jaq-std?/math",
     "jaq-std?/regex", "jaq-std?/time", "serde_json?/std", "thiserror?/std",
+    "dep:stacker",
 ]
 # Reserved for experimental APIs; currently has no effect.
 unstable = []
@@ -71,6 +72,7 @@ jaq-core = { version = "3.1.1", default-features = false, optional = true }
 jaq-json = { version = "2.0.3", default-features = false, optional = true }
 jaq-std = { version = "3.0.3", default-features = false, optional = true }
 serde_json = { version = "1", default-features = false, features = ["alloc"], optional = true }
+stacker = { version = "0.1.25", optional = true }
 thiserror = { version = "2", default-features = false, optional = true }
 
 [dev-dependencies]
