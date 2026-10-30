@@ -28,13 +28,17 @@
 //!   error and debug levels; enables `std`. Without it, both pass their input
 //!   through silently, so programs cannot write to the host's logs. jq's
 //!   subprocess stderr only appears in execution error messages, regardless.
+//! - `stacker`: runs jaq on a large stack segment, so that deeply nested
+//!   programs and values do not abort the process; enables `std`. Recommended
+//!   for untrusted programs; adds a few microseconds per call. See [Resource
+//!   limits](#resource-limits).
 //! - `jq`: enables the upstream jq subprocess backend and requires `std`.
 //! - `libjq`, `xq`: reserved for unimplemented backends.
 //! - `unstable`: reserved for experimental APIs; currently has no effect.
 //!
-//! Defaults enable `all` and `std`, but not `env`, `import`, or `log`. Reserved flags do not provide a filtering
-//! API on their own. `jaq` takes precedence when both backends are enabled.
-//! To use upstream jq, disable defaults and enable only `jq`; a `jq` executable
+//! Defaults enable `all` and `std`, but not `env`, `import`, `log`, or
+//! `stacker`. Reserved flags do not provide a filtering API on their own.
+//! `jaq` takes precedence when both backends are enabled. To use upstream jq, disable defaults and enable only `jq`; a `jq` executable
 //! must be available on `PATH` during construction and evaluation. Each call
 //! starts a fresh process, which is reaped on completion or early stopping.
 //! Unlike jaq, the subprocess backend validates source at construction and
@@ -74,13 +78,29 @@
 //! # Resource limits
 //!
 //! Programs can run indefinitely or exhaust memory. The jq backend can stop
-//! evaluations with `JsonFilter::set_timeout`; jaq cannot be interrupted. jaq
-//! recurses on the native stack, where an overflow aborts the process. With
-//! `std`, it parses, compiles, and evaluates on a separate 256 MiB stack
-//! segment (32 MiB on 32-bit targets), reserved up front but committed as
-//! used. This tolerates nesting and recursion depths in the tens of thousands,
-//! but not unbounded ones: limit the size of untrusted programs. Results are
-//! returned as-is, so callers must also handle deeply nested output values.
+//! evaluations with `JsonFilter::set_timeout`; jaq cannot be interrupted.
+//!
+//! jaq recurses on the native stack, where an overflow aborts the process
+//! rather than returning an error. The `stacker` feature makes jaq parse,
+//! compile, and evaluate on a separate 256 MiB stack segment (32 MiB on 32-bit
+//! targets), reserved up front but committed as used. This costs a few
+//! microseconds per call, regardless of the caller's own stack size.
+//!
+//! Depths that abort the process when called from a 2 MiB thread, the default
+//! for many async runtime workers, measured in a release build at 300, 1k, 3k,
+//! 10k, 30k, 100k, and 300k levels (debug builds abort far sooner):
+//!
+//! | Case                                    | Default | `stacker` |
+//! | --------------------------------------- | ------: | --------: |
+//! | `[[…]] \| length` program nesting       |      1k |      300k |
+//! | `def f: … (. + 1 \| f) + 1 …` recursion |      1k |      100k |
+//! | `[[…]]` value built and dropped         |    100k |    > 300k |
+//! | `[[…]]` value passed to `tojson`        |      3k |      300k |
+//! | `[[…]]` value returned to the caller    |     10k |       30k |
+//!
+//! Limits remain finite, so bound the size of untrusted programs. Results are
+//! returned as-is, and dropping or serializing deeply nested values recurses
+//! on the caller's stack, which `stacker` cannot protect.
 //!
 //! # Numbers
 //!

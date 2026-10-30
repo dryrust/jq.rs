@@ -1,6 +1,6 @@
 // This is free and unencumbered software released into the public domain.
 
-#![cfg(all(feature = "jaq", feature = "std"))]
+#![cfg(all(feature = "jaq", feature = "stacker"))]
 
 use jq::{JsonFilter, JsonFilterError};
 use serde_json::{Value, json};

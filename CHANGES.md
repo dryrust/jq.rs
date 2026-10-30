@@ -9,11 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - `JsonFilter::set_timeout` and `JsonFilterError::Timeout` to stop jq backend
   evaluations at a deadline
+- `stacker` feature to run jaq on a large stack, so deeply nested programs
+  and values no longer crash the host process at modest depths
 ### Changed
 - Mark `JsonFilterError` as `#[non_exhaustive]`
-### Security
-- Run jaq on a large stack, so deeply nested programs and values no longer
-  crash the host process at modest depths
 
 ## [0.3.1] - 2026-10-30
 ### Added

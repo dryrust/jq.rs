@@ -223,8 +223,9 @@ impl Program {
 // dropping values, and a stack overflow aborts the whole process. Run on a
 // large stack segment instead; it is reserved up front but committed lazily.
 // The segment raises overflow thresholds about a hundredfold over a 2 MiB
-// thread, without moving work (or the visitor) to another thread.
-#[cfg(feature = "std")]
+// thread, without moving work (or the visitor) to another thread. See the
+// crate-level "Resource limits" documentation for measured depths.
+#[cfg(feature = "stacker")]
 fn with_large_stack<T>(f: impl FnOnce() -> T) -> T {
     const SIZE: usize = if cfg!(target_pointer_width = "64") {
         256 << 20
@@ -235,7 +236,7 @@ fn with_large_stack<T>(f: impl FnOnce() -> T) -> T {
     stacker::maybe_grow(SIZE / 2, SIZE, f)
 }
 
-#[cfg(not(feature = "std"))]
+#[cfg(not(feature = "stacker"))]
 fn with_large_stack<T>(f: impl FnOnce() -> T) -> T {
     f()
 }

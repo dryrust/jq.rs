@@ -108,6 +108,7 @@ or run `cargo doc --open` for the development version.
 | `env` | Exposes host environment variables to `env`; enables `std`. |
 | `import` | Lets the jq backend load modules and JSON data files. |
 | `log` | Forwards jaq's `stderr` and `debug` messages to [`log`]. |
+| `stacker` | Runs jaq on a large stack to survive deep nesting. |
 | `all` | Enables both backends. |
 
 Defaults enable `all` and `std`. `env` and `import` are opt-in, as they

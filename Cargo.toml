@@ -34,7 +34,6 @@ std = [
     "jaq-core?/std", "jaq-json?/std", "jaq-std?/std",
     "jaq-std?/format", "jaq-std?/log", "jaq-std?/math",
     "jaq-std?/regex", "jaq-std?/time", "serde_json?/std", "thiserror?/std",
-    "dep:stacker",
 ]
 # Reserved for experimental APIs; currently has no effect.
 unstable = []
@@ -44,6 +43,8 @@ env = ["std"]
 import = []
 # Forwards jaq's `stderr` and `debug` messages to the `log` crate.
 log = ["std"]
+# Runs jaq on a large stack, so deep programs and values do not abort.
+stacker = ["std", "dep:stacker"]
 
 jaq = ["_api", "dep:jaq-core", "dep:jaq-json", "dep:jaq-std"]
 # Upstream jq subprocess backend; jaq takes precedence when both are enabled.
