@@ -10,6 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `env` feature to expose host environment variables to programs
 ### Security
 - Return an empty object from `env` unless the `env` feature is enabled
+- Run jq with an empty environment unless the `env` feature is enabled,
+  which also disables `~/.jq` and makes local time UTC
 
 ## 0.2.0 - 2026-10-05
 ### Added

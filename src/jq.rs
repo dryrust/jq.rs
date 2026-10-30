@@ -38,11 +38,14 @@ impl Program {
         };
         // jq compiles before reading stdin. EOF validates the actual program
         // without evaluation or a wrapper that can change its syntax.
-        let output = Command::new("jq")
-            .args(["-c", "-M", "--"])
-            .arg(&source)
-            .stdin(Stdio::null())
-            .output()
+        let output = jq_command()
+            .and_then(|mut command| {
+                command
+                    .args(["-c", "-M", "--"])
+                    .arg(&source)
+                    .stdin(Stdio::null())
+                    .output()
+            })
             .map_err(|error| {
                 JsonFilterError::Compile(vec![CompilationDiagnostic {
                     phase: CompilationPhase::Load,
@@ -55,6 +58,28 @@ impl Program {
         }
         Ok(Self { source })
     }
+}
+
+// Host variables often hold secrets, and jq exposes them through `env` and
+// `$ENV`. Clearing them also unsets `HOME`, so `~/.jq` is not loaded.
+fn jq_command() -> Result<Command, std::io::Error> {
+    let mut command = Command::new(jq_executable()?);
+    if cfg!(not(feature = "env")) {
+        command.env_clear();
+    }
+    Ok(command)
+}
+
+// Search this process's `PATH` explicitly: without `PATH` in the child's
+// environment, Unix `execvp` would fall back to a default search path.
+fn jq_executable() -> Result<std::path::PathBuf, std::io::Error> {
+    let name = format!("jq{}", std::env::consts::EXE_SUFFIX);
+    std::env::var_os("PATH")
+        .iter()
+        .flat_map(std::env::split_paths)
+        .map(|dir| dir.join(&name))
+        .find(|path| path.is_file())
+        .ok_or_else(|| std::io::Error::new(std::io::ErrorKind::NotFound, "jq not found in PATH"))
 }
 
 fn compile_diagnostics(output: &std::process::Output) -> Vec<CompilationDiagnostic> {
@@ -113,7 +138,7 @@ impl Program {
                 "bindings": bindings.iter().map(|(_, value)| value).collect::<alloc::vec::Vec<_>>()
             })
         };
-        let mut command = Command::new("jq");
+        let mut command = jq_command().map_err(io_error)?;
         command.args(["-c", "-M", "--unbuffered"]);
         if auxiliary.is_some() {
             // Evaluate the main input exactly once. Tagged records carry either

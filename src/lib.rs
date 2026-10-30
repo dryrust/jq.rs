@@ -14,9 +14,11 @@
 //! - `all`: enables every implemented backend (`jaq` and `jq`).
 //! - `jaq`: enables the jaq implementation and public filtering API.
 //! - `std`: enables standard-library support in dependencies.
-//! - `env`: exposes host environment variables to programs through `env`;
-//!   enables `std`. Without it, `env` returns an empty object. Never enable it
-//!   when programs come from untrusted sources, such as web API requests.
+//! - `env`: exposes host environment variables to programs through `env` (and
+//!   `$ENV` on jq); enables `std`. Without it, both are empty objects, and the
+//!   jq subprocess runs with an empty environment, so it ignores `~/.jq` and
+//!   `TZ`. Never enable it when programs come from untrusted sources, such as
+//!   web API requests.
 //! - `jq`: enables the upstream jq subprocess backend and requires `std`.
 //! - `libjq`, `xq`: reserved for unimplemented backends.
 //! - `unstable`: reserved for experimental APIs; currently has no effect.
