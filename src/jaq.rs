@@ -102,6 +102,12 @@ impl Program {
                     "implode" => Native::<Data>::new(|cv| {
                         jaq_core::box_iter::box_once(implode(cv.1).map_err(Into::into))
                     }),
+                    // Host variables often hold secrets, so expose them only on
+                    // explicit opt-in. Without std, `env` is undefined anyway.
+                    #[cfg(not(feature = "env"))]
+                    "env" => Native::<Data>::new(|_| {
+                        jaq_core::box_iter::box_once(Ok(Val::obj(Default::default())))
+                    }),
                     "length" => Native::<Data>::new(|cv| {
                         jaq_core::box_iter::box_once(length(cv.1).map_err(Into::into))
                     }),

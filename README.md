@@ -116,9 +116,11 @@ or run `cargo doc --open` for the development version.
 | `jaq` | In-process Rust backend. |
 | `jq` | Upstream jq subprocess backend; enables `std`. |
 | `std` | Standard-library support and jaq's optional functions. |
+| `env` | Exposes host environment variables to `env`; enables `std`. |
 | `all` | Enables both backends. |
 
-Defaults enable `all` and `std`; `jaq` takes precedence when both backends are
+Defaults enable `all` and `std`. `env` is opt-in, as environment variables
+often hold secrets; never enable it for untrusted programs. `jaq` takes precedence when both backends are
 enabled. To select the subprocess backend, set `default-features = false` and
 `features = ["jq"]` on the dependency. For `no_std` with heap allocation, use
 `default-features = false` and `features = ["jaq"]` instead.

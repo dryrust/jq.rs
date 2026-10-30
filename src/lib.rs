@@ -7,18 +7,21 @@
 //! The `std` feature is enabled by default.
 //! Without it, jaq provides core filtering, sorting, JSON conversion, Unicode
 //! operations, and basic rounding. Regex, transcendental math, date/time,
-//! environment access, logging, and optional encoding functions require `std`.
+//! logging, and optional encoding functions require `std`.
 //!
 //! # Features
 //!
 //! - `all`: enables every implemented backend (`jaq` and `jq`).
 //! - `jaq`: enables the jaq implementation and public filtering API.
 //! - `std`: enables standard-library support in dependencies.
+//! - `env`: exposes host environment variables to programs through `env`;
+//!   enables `std`. Without it, `env` returns an empty object. Never enable it
+//!   when programs come from untrusted sources, such as web API requests.
 //! - `jq`: enables the upstream jq subprocess backend and requires `std`.
 //! - `libjq`, `xq`: reserved for unimplemented backends.
 //! - `unstable`: reserved for experimental APIs; currently has no effect.
 //!
-//! Defaults enable `all` and `std`. Reserved flags do not provide a filtering
+//! Defaults enable `all` and `std`, but not `env`. Reserved flags do not provide a filtering
 //! API on their own. `jaq` takes precedence when both backends are enabled.
 //! To use upstream jq, disable defaults and enable only `jq`; a `jq` executable
 //! must be available on `PATH` during construction and evaluation. Each call

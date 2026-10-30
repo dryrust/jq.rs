@@ -37,6 +37,8 @@ std = [
 ]
 # Reserved for experimental APIs; currently has no effect.
 unstable = []
+# Exposes host environment variables to programs; unsafe for untrusted input.
+env = ["std"]
 
 jaq = ["_api", "dep:jaq-core", "dep:jaq-json", "dep:jaq-std"]
 # Upstream jq subprocess backend; jaq takes precedence when both are enabled.
