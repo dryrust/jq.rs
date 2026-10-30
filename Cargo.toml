@@ -7,7 +7,7 @@ resolver = "3"
 
 [package]
 name = "jq"
-version = "0.2.0"
+version = "0.3.0"
 authors = ["Arto Bendiken"]
 edition = "2024"
 rust-version = "1.97"

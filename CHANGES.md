@@ -2,10 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## 0.3.0 - 2026-10-30
+## [Unreleased]
+
+## [0.3.0] - 2026-10-30
 ### Added
 - `env` feature to expose host environment variables to programs
 - `import` feature to let jq programs load modules and JSON data files
@@ -16,7 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Reject jq `import`, `include`, and `module` unless the `import` feature is
   enabled, as imports could read JSON files from the working directory
 
-## 0.2.0 - 2026-10-05
+## [0.2.0] - 2026-10-05
 ### Added
 - Upstream `jq` subprocess backend, enabled with `--no-default-features --features jq`
 - Fallible auxiliary input streams for first, collected, and visited results
@@ -36,11 +38,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Return execution errors for `halt` and `halt_error` instead of exiting
 - Report unrepresentable output numbers instead of panicking
 
-## 0.1.1 - 2026-10-04
+## [0.1.1] - 2026-10-04
 ### Added
 - `JsonFilter::filter_json_all` and `filter_json_str_all` to collect all results
   and report execution errors after a result
 
-## 0.1.0 - 2025-05-24
+## [0.1.0] - 2025-05-24
 ### Added
 - `jq::JsonFilter` (requires the `jaq` feature)
+
+[Unreleased]: https://github.com/dryrust/jq.rs/compare/0.3.0...HEAD
+[0.3.0]: https://github.com/dryrust/jq.rs/compare/0.2.0...0.3.0
+[0.2.0]: https://github.com/dryrust/jq.rs/compare/0.1.1...0.2.0
+[0.1.1]: https://github.com/dryrust/jq.rs/compare/0.1.0...0.1.1
+[0.1.0]: https://github.com/dryrust/jq.rs/releases/tag/0.1.0
