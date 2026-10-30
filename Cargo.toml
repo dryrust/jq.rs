@@ -54,6 +54,13 @@ xq = []
 # Shared filtering API dependencies; enabled by implemented backends.
 _api = ["dep:serde_json", "dep:thiserror"]
 
+# Select the jq backend, so that its backend-specific items appear too. The
+# nightly `doc_cfg` feature labels every feature-gated item with its features.
+[package.metadata.docs.rs]
+no-default-features = true
+features = ["jq"]
+rustdoc-args = ["--cfg", "docsrs"]
+
 [[bench]]
 name = "filter"
 harness = false
