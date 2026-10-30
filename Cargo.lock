@@ -231,6 +231,7 @@ dependencies = [
  "jaq-core",
  "jaq-json",
  "jaq-std",
+ "log",
  "serde_json",
  "thiserror",
 ]

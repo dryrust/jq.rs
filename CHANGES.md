@@ -6,6 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Added
+- `log` feature to forward jaq's `stderr` and `debug` messages to `log`
+### Security
+- Discard jaq's `stderr` and `debug` messages unless the `log` feature is
+  enabled, as programs could write arbitrary text into the host's logs
 
 ## [0.3.0] - 2026-10-30
 ### Added

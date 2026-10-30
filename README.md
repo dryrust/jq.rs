@@ -118,6 +118,7 @@ or run `cargo doc --open` for the development version.
 | `std` | Standard-library support and jaq's optional functions. |
 | `env` | Exposes host environment variables to `env`; enables `std`. |
 | `import` | Lets the jq backend load modules and JSON data files. |
+| `log` | Forwards jaq's `stderr` and `debug` messages to [`log`]. |
 | `all` | Enables both backends. |
 
 Defaults enable `all` and `std`. `env` and `import` are opt-in, as they
@@ -151,6 +152,7 @@ git clone https://github.com/dryrust/jq.rs.git
 [Rust]: https://rust-lang.org
 [jaq]: https://github.com/01mf02/jaq
 [jq]: https://jqlang.org
+[`log`]: https://docs.rs/log
 [`JsonFilter`]: https://docs.rs/jq/latest/jq/struct.JsonFilter.html
 [`JsonFilterError`]: https://docs.rs/jq/latest/jq/enum.JsonFilterError.html
 [`serde_json::Value`]: https://docs.rs/serde_json/latest/serde_json/enum.Value.html

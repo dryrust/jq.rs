@@ -108,6 +108,12 @@ impl Program {
                     "env" => Native::<Data>::new(|_| {
                         jaq_core::box_iter::box_once(Ok(Val::obj(Default::default())))
                     }),
+                    // jaq-std logs these messages, which would let programs write
+                    // arbitrary text into the host's logs. Discard by default.
+                    #[cfg(not(feature = "log"))]
+                    "stderr_empty" | "debug_empty" => {
+                        Native::<Data>::new(|_| alloc::boxed::Box::new(core::iter::empty()))
+                    }
                     "length" => Native::<Data>::new(|cv| {
                         jaq_core::box_iter::box_once(length(cv.1).map_err(Into::into))
                     }),

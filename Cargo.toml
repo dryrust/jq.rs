@@ -41,6 +41,8 @@ unstable = []
 env = ["std"]
 # Lets jq programs load modules and data files; unsafe for untrusted input.
 import = []
+# Forwards jaq's `stderr` and `debug` messages to the `log` crate.
+log = ["std"]
 
 jaq = ["_api", "dep:jaq-core", "dep:jaq-json", "dep:jaq-std"]
 # Upstream jq subprocess backend; jaq takes precedence when both are enabled.
@@ -63,3 +65,6 @@ jaq-json = { version = "2.0.3", default-features = false, optional = true }
 jaq-std = { version = "3.0.3", default-features = false, optional = true }
 serde_json = { version = "1", default-features = false, features = ["alloc"], optional = true }
 thiserror = { version = "2", default-features = false, optional = true }
+
+[dev-dependencies]
+log = { version = "0.4", default-features = false }
