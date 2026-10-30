@@ -28,7 +28,7 @@ impl Program {
         // Names are validated by the common API. Values travel as JSON on stdin,
         // avoiding source interpolation and command-line argument size limits.
         let source = if bindings.is_empty() {
-            String::from(source)
+            format!("{DIRECTIVE_GUARD}{source}")
         } else {
             let mut prefix = String::new();
             for (index, (name, _)) in bindings.iter().enumerate() {
@@ -81,6 +81,15 @@ fn jq_executable() -> Result<std::path::PathBuf, std::io::Error> {
         .find(|path| path.is_file())
         .ok_or_else(|| std::io::Error::new(std::io::ErrorKind::NotFound, "jq not found in PATH"))
 }
+
+// jq accepts module directives only before any definition, so a leading one
+// rejects `import`, `include`, and `module`. Imports would otherwise read jq
+// modules and JSON data files relative to the working directory. The binding
+// prefix and auxiliary prelude reject directives as well.
+#[cfg(not(feature = "import"))]
+const DIRECTIVE_GUARD: &str = "def __jqrs_guard: .; ";
+#[cfg(feature = "import")]
+const DIRECTIVE_GUARD: &str = "";
 
 fn compile_diagnostics(output: &std::process::Output) -> Vec<CompilationDiagnostic> {
     let phase = if output.status.code() == Some(3) {

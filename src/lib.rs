@@ -19,11 +19,16 @@
 //!   jq subprocess runs with an empty environment, so it ignores `~/.jq` and
 //!   `TZ`. Never enable it when programs come from untrusted sources, such as
 //!   web API requests.
+//! - `import`: lets the jq subprocess backend load modules and JSON data files
+//!   relative to its working directory, through `import` and `include`, for
+//!   programs without bindings or auxiliary inputs. Without it, module
+//!   directives are syntax errors. jaq rejects them regardless. Never enable it
+//!   for untrusted programs.
 //! - `jq`: enables the upstream jq subprocess backend and requires `std`.
 //! - `libjq`, `xq`: reserved for unimplemented backends.
 //! - `unstable`: reserved for experimental APIs; currently has no effect.
 //!
-//! Defaults enable `all` and `std`, but not `env`. Reserved flags do not provide a filtering
+//! Defaults enable `all` and `std`, but not `env` or `import`. Reserved flags do not provide a filtering
 //! API on their own. `jaq` takes precedence when both backends are enabled.
 //! To use upstream jq, disable defaults and enable only `jq`; a `jq` executable
 //! must be available on `PATH` during construction and evaluation. Each call

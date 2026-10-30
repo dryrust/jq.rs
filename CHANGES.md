@@ -8,10 +8,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## 0.3.0 - 2026-10-30
 ### Added
 - `env` feature to expose host environment variables to programs
+- `import` feature to let jq programs load modules and JSON data files
 ### Security
 - Return an empty object from `env` unless the `env` feature is enabled
 - Run jq with an empty environment unless the `env` feature is enabled,
   which also disables `~/.jq` and makes local time UTC
+- Reject jq `import`, `include`, and `module` unless the `import` feature is
+  enabled, as imports could read JSON files from the working directory
 
 ## 0.2.0 - 2026-10-05
 ### Added
